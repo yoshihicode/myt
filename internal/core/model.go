@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"myt/internal/database"
+	"myt/internal/types"
 	"sort"
 	"strings"
 
@@ -20,23 +21,9 @@ const (
 	Main
 )
 
-// Config YAML
-type Config struct {
-	Name    string `yaml:"name"`
-	Host    string `yaml:"host"`
-	Port    int    `yaml:"port"`
-	User    string `yaml:"user"`
-	Pass    string `yaml:"pass"`
-	SSHHost string `yaml:"ssh_host"`
-	SSHPort int    `yaml:"ssh_port"`
-	SSHUser string `yaml:"ssh_user"`
-	SSHPass string `yaml:"ssh_pass"`
-	SSHKey  string `yaml:"ssh_key"`
-}
-
 type Model struct {
 	State        AppState
-	Configs      []Config
+	Configs      []types.Config
 	ConfigCursor int
 	ErrorMsg     string // 接続失敗時のメッセージ
 
@@ -70,7 +57,7 @@ type Model struct {
 	TabMatchIdx int
 }
 
-func NewModel(configs []Config, rw bool) *Model {
+func NewModel(configs []types.Config, rw bool) *Model {
 	ti := textarea.New()
 	ti.Placeholder = "Write your SQL query here..."
 	ti.SetHeight(5)
@@ -107,7 +94,7 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) InitConnection(cfg Config) error {
+func (m *Model) InitConnection(cfg types.Config) error {
 	netType := "tcp"
 	if cfg.SSHHost != "" {
 		// Generate a unique identifier for each SSH connection

@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"myt/internal/core"
+	"myt/internal/types"
 )
 
 func main() {
@@ -29,7 +30,7 @@ func main() {
 	sshKey := flag.String("ssh-key", "", "Path to SSH private key (e.g., ~/.ssh/id_rsa)")
 	flag.Parse()
 
-	var configs []core.Config
+	var configs []types.Config
 
 	if *confPath != "" {
 		data, err := os.ReadFile(*confPath)
@@ -50,7 +51,7 @@ func main() {
 		}
 	} else {
 
-		configs = append(configs, core.Config{
+		configs = append(configs, types.Config{
 			Name:    "CLI Connection",
 			Host:    *host,
 			Port:    *port,
