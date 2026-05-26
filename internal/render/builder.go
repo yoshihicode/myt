@@ -2,7 +2,6 @@ package render
 
 import "strings"
 
-// renderパッケージ内で共通利用するビルダ構造体
 type MyStringBuilder struct {
 	strings.Builder
 }
