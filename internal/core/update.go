@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -317,8 +318,8 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 				}
 			}
 		}
-
-		header := lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render(fmt.Sprintf("--- Result [%d]: %s ---", queryCount, query))
+		nowStr := time.Now().Format("2006-01-02 15:04:05.000")
+		header := lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render(fmt.Sprintf("--- Result [%s]: [%d] %s ---", nowStr, queryCount, query))
 		finalOutput.WriteStrings("\n", header, "\n")
 
 		if !isAllowed {
