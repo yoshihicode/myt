@@ -99,7 +99,7 @@ func (m *Model) InitConnection(cfg types.Config) error {
 	if cfg.SSHHost != "" {
 		// Generate a unique identifier for each SSH connection
 		netType = fmt.Sprintf("mysql+tcp+%s", cfg.Name)
-		err := database.SetupSSHWithNetType(cfg.SSHHost, cfg.SSHPort, cfg.SSHUser, cfg.SSHPass, cfg.SSHKey, netType)
+		err := database.Setup(cfg.SSHHost, cfg.SSHPort, cfg.SSHUser, cfg.SSHPass, cfg.SSHKey, netType)
 		if err != nil {
 			return err
 		}

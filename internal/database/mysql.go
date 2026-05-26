@@ -17,7 +17,7 @@ type QueryResult struct {
 	Message string // "Query OK" などのメッセージ
 }
 
-func SetupSSHWithNetType(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType string) error {
+func Setup(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType string) error {
 	var authMethods []ssh.AuthMethod
 	if sshKey != "" {
 		keyData, err := os.ReadFile(sshKey)
