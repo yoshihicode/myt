@@ -92,9 +92,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.SqlInput.SetValue("")
 			return m, nil
 		}
-
 		if msg.String() == "ctrl+r" {
-			m.Connect()
+			m.Connect(m.Configs[m.ConfigCursor])
 			return m, nil
 		}
 
@@ -121,7 +120,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "up", "j":
 				if m.SchemaPane == 0 && m.DBCursor > 0 {
 					m.DBCursor--
-					m.Connect()
+					m.Connect(m.Configs[m.ConfigCursor])
 				} else if m.SchemaPane == 1 && m.TableCursor > 0 {
 					m.TableCursor--
 					m.UpdateColumns()
@@ -131,7 +130,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "down", "k":
 				if m.SchemaPane == 0 && m.DBCursor < len(m.Databases)-1 {
 					m.DBCursor++
-					m.Connect()
+					m.Connect(m.Configs[m.ConfigCursor])
 				} else if m.SchemaPane == 1 && m.TableCursor < len(m.Tables)-1 {
 					m.TableCursor++
 					m.UpdateColumns()
@@ -140,7 +139,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case "enter":
 				if m.SchemaPane == 0 && m.DBCursor < len(m.Databases) {
-					m.Connect()
+					m.Connect(m.Configs[m.ConfigCursor])
 					if len(m.Tables) > 0 {
 						m.SchemaPane = 1
 					}

@@ -70,8 +70,8 @@ func GetDatabases(db *sql.DB) ([]string, error) {
 	return databases, nil
 }
 
-func GetDatabase(host string, port int, user, pass, netType string, dbName string) (*sql.DB, error) {
-	dsnWithDB := fmt.Sprintf("%s:%s@%s(%s:%d)/%s?charset=utf8mb4", user, pass, netType, host, port, dbName)
+func GetDatabase(host string, port int, user, pass, netType string, dbName string, charset string) (*sql.DB, error) {
+	dsnWithDB := fmt.Sprintf("%s:%s@%s(%s:%d)/%s?charset=%s", user, pass, netType, host, port, dbName, charset)
 	db, err := sql.Open("mysql", dsnWithDB)
 	if err != nil {
 		if db != nil {

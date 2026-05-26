@@ -105,7 +105,7 @@ func (m *Model) InitConnection(cfg types.Config) error {
 		}
 	}
 
-	db, err := database.GetDatabase(cfg.Host, cfg.Port, cfg.User, cfg.Pass, netType, "")
+	db, err := database.GetDatabase(cfg.Host, cfg.Port, cfg.User, cfg.Pass, netType, "", cfg.Charset)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (m *Model) InitConnection(cfg types.Config) error {
 	if len(databases) > 0 {
 		defaultDB := databases[0]
 		m.Close()
-		newDB, _ := database.GetDatabase(cfg.Host, cfg.Port, cfg.User, cfg.Pass, netType, defaultDB)
+		newDB, _ := database.GetDatabase(cfg.Host, cfg.Port, cfg.User, cfg.Pass, netType, defaultDB, cfg.Charset)
 
 		m.DB = newDB
 		m.Conn, _ = database.GetConnection(newDB, m.ReadWrite)
@@ -140,11 +140,11 @@ func (m *Model) InitConnection(cfg types.Config) error {
 	return nil
 }
 
-func (m *Model) Connect() {
+func (m *Model) Connect(cfg types.Config) {
 	dbName := m.Databases[m.DBCursor]
 	m.Close()
 
-	db, _ := database.GetDatabase(m.DBHost, m.DBPort, m.DBUser, m.DBPass, m.DBNet, dbName)
+	db, _ := database.GetDatabase(m.DBHost, m.DBPort, m.DBUser, m.DBPass, m.DBNet, dbName, cfg.Charset)
 	conn, _ := database.GetConnection(db, m.ReadWrite)
 	m.DB = db
 	m.Conn = conn

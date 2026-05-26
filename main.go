@@ -22,6 +22,7 @@ func main() {
 	pass := flag.String("pass", "", "MySQL password")
 
 	rw := flag.Bool("rw", false, "Enable read-write mode (Caution: Allows INSERT/UPDATE/DELETE with autocommit=0)")
+	charset := flag.String("charset", "utf8mb4", "Character set for the connection")
 
 	sshHost := flag.String("ssh-host", "", "SSH bastion host address (e.g., 192.168.1.10)")
 	sshPort := flag.Int("ssh-port", 22, "SSH port")
@@ -57,6 +58,7 @@ func main() {
 			Port:    *port,
 			User:    *user,
 			Pass:    *pass,
+			Charset: *charset,
 			SSHHost: *sshHost,
 			SSHPort: *sshPort,
 			SSHUser: *sshUser,
