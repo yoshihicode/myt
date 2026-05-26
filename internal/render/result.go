@@ -19,16 +19,6 @@ const (
 	FormatJSON
 )
 
-type MyStringBuilder struct {
-	strings.Builder
-}
-
-func (b *MyStringBuilder) WriteStrings(text ...string) {
-	for _, t := range text {
-		b.WriteString(t)
-	}
-}
-
 var FormatNames = []string{"GRID", "MARKDOWN", "CSV", "JSON"}
 
 func FormatResult(res *database.QueryResult, format OutputFormat) string {

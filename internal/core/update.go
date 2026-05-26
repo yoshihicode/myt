@@ -296,7 +296,7 @@ func (m *Model) Autocomplete() {
 func (m *Model) ExecuteSQL() tea.Cmd {
 	rawInput := m.SqlInput.Value()
 	queries := strings.Split(rawInput, ";")
-	var finalOutput MyStringBuilder
+	var finalOutput render.MyStringBuilder
 	queryCount := 0
 
 	for _, q := range queries {

@@ -7,16 +7,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type MyStringBuilder struct {
-	strings.Builder
-}
-
-func (b *MyStringBuilder) WriteStrings(text ...string) {
-	for _, t := range text {
-		b.WriteString(t)
-	}
-}
-
 func truncateText(name string, maxWidth int) string {
 	if lipgloss.Width(name) <= maxWidth {
 		return name
@@ -35,7 +25,7 @@ func truncateText(name string, maxWidth int) string {
 }
 
 func (m *Model) View() string {
-	var s MyStringBuilder
+	var s render.MyStringBuilder
 
 	if m.State == SelectConfig {
 		return render.Config(m.Configs, m.ConfigCursor, m.ErrorMsg)
