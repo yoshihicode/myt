@@ -6,6 +6,8 @@
 * **🔒 Built-in SSH Tunneling:** Easily connect to remote databases through secure bastion hosts using passwords or SSH private keys.
 * **🤖 Auto-Completion:** Case-insensitive autocomplete for standard SQL keywords, table names, and columns.
 * **📂 Multi-Format Rendering:** View or seamlessly log results to a file in **GRID, MARKDOWN, CSV, or JSON** formats.
+* **🧩 No Dependencies:** Just a single binary with zero external runtime requirements.
+* **🖥️ Cross-Platform:** Available for Windows, macOS, and Linux.
 
 ## 💾 Download
 Download prebuilt binaries from the latest release:  
