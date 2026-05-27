@@ -49,6 +49,9 @@ func main() {
 			if configs[i].SSHHost != "" && configs[i].SSHPort == 0 {
 				configs[i].SSHPort = 22
 			}
+			if configs[i].Charset == "" {
+				configs[i].Charset = *charset
+			}
 		}
 	} else {
 
