@@ -13,4 +13,5 @@ type Config struct {
 	SSHPass string `yaml:"ssh_pass"`
 	SSHKey  string `yaml:"ssh_key"`
 	Charset string `yaml:"charset"`
+	Tee     string `yaml:"tee"`
 }

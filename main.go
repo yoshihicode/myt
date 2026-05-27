@@ -23,6 +23,7 @@ func main() {
 
 	rw := flag.Bool("rw", false, "Enable read-write mode (Caution: Allows INSERT/UPDATE/DELETE with autocommit=0)")
 	charset := flag.String("charset", "utf8mb4", "Character set for the connection")
+	tee := flag.String("tee", "", "Output file path for query results (Appends results)")
 
 	sshHost := flag.String("ssh-host", "", "SSH bastion host address (e.g., 192.168.1.10)")
 	sshPort := flag.Int("ssh-port", 22, "SSH port")
@@ -52,6 +53,9 @@ func main() {
 			if configs[i].Charset == "" {
 				configs[i].Charset = *charset
 			}
+			if configs[i].Tee == "" {
+				configs[i].Tee = *tee
+			}
 		}
 	} else {
 
@@ -62,6 +66,7 @@ func main() {
 			User:    *user,
 			Pass:    *pass,
 			Charset: *charset,
+			Tee:     *tee,
 			SSHHost: *sshHost,
 			SSHPort: *sshPort,
 			SSHUser: *sshUser,

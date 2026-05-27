@@ -25,7 +25,8 @@ type Model struct {
 	State        AppState
 	Configs      []types.Config
 	ConfigCursor int
-	ErrorMsg     string // 接続失敗時のメッセージ
+	ErrorMsg     string
+	Tee          string
 
 	DB               *sql.DB
 	Conn             *sql.Conn

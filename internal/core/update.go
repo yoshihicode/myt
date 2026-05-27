@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"myt/internal/database"
 	"myt/internal/render"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -340,6 +341,18 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 		return nil
 	}
 
+	if m.Configs[m.ConfigCursor].Tee != "" {
+		f, err := os.OpenFile(m.Configs[m.ConfigCursor].Tee, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil {
+			return tea.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: Failed to open output file: %v", err)))
+		}
+		defer f.Close()
+
+		if _, err := f.WriteString(ansiRegex.ReplaceAllString(finalOutput.String(), "")); err != nil {
+			return tea.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: Failed to write to file: %v", err)))
+		}
+	}
+
 	var cmds []tea.Cmd
 	lines := strings.Split(finalOutput.String(), "\n")
 	for i, line := range lines {
@@ -350,3 +363,5 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 	}
 	return tea.Sequence(cmds...)
 }
+
+var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
