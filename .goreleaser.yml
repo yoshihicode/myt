@@ -1,0 +1,42 @@
+version: 2
+
+project_name: myt
+env:
+  - GO111MODULE=on
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - main: main.go
+    binary: myt
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Revision={{.ShortCommit}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - 386
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+release:
+  prerelease: auto
+brews:
+  - name: myt
+    repository:
+      owner: yoshihicode
+      name: homebrew-tap
+    directory: Formula
+    homepage: "https://github.com/yoshihicode/myt"
+    description: "myt is terminal based MySQL client."
+    license: "MIT"
+    test: |
+      system "#{bin}/myt --help"
+    install: |
+      bin.install "myt"
