@@ -73,7 +73,7 @@ func NewModel(configs []types.Config, rw bool) *Model {
 		FocusSQL:     false,
 		SchemaPane:   0,
 		SqlInput:     ti,
-		OutputFormat: render.FormatGrid,
+		OutputFormat: render.Grid,
 		ShowHelp:     false,
 		ReadWrite:    rw,
 	}

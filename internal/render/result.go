@@ -13,10 +13,10 @@ import (
 type OutputFormat int
 
 const (
-	FormatGrid OutputFormat = iota
-	FormatMarkdown
-	FormatCSV
-	FormatJSON
+	Grid OutputFormat = iota
+	Markdown
+	CSV
+	JSON
 )
 
 var FormatNames = []string{"GRID", "MARKDOWN", "CSV", "JSON"}
@@ -31,7 +31,7 @@ func FormatResult(res *database.QueryResult, format OutputFormat) string {
 	results := res.Rows
 
 	switch format {
-	case FormatMarkdown:
+	case Markdown:
 		sb.WriteStrings("| ", strings.Join(cols, " | "), " |\n|")
 		for range cols {
 			sb.WriteString("---|")
@@ -47,7 +47,7 @@ func FormatResult(res *database.QueryResult, format OutputFormat) string {
 			sb.WriteStrings("| ", strings.Join(rowStrs, " | "), " |\n")
 		}
 
-	case FormatCSV:
+	case CSV:
 		sb.WriteStrings(strings.Join(cols, ","), "\n")
 		for _, row := range results {
 			var rowStrs []string
@@ -62,11 +62,11 @@ func FormatResult(res *database.QueryResult, format OutputFormat) string {
 			sb.WriteStrings(strings.Join(rowStrs, ","), "\n")
 		}
 
-	case FormatJSON:
+	case JSON:
 		jsonData, _ := json.MarshalIndent(results, "", "  ")
 		sb.WriteStrings(string(jsonData), "\n")
 
-	case FormatGrid:
+	case Grid:
 		colWidths := make([]int, len(cols))
 		for i, col := range cols {
 			colWidths[i] = lipgloss.Width(col)
