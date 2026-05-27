@@ -21,7 +21,7 @@ func main() {
 	user := flag.String("user", "", "MySQL username")
 	pass := flag.String("pass", "", "MySQL password")
 
-	rw := flag.Bool("rw", false, "Enable read-write mode (Caution: Allows INSERT/UPDATE/DELETE with autocommit=0)")
+	rw := flag.Bool("rw", false, "Enable read-write mode (Caution: Allows DML with autocommit=0)")
 	charset := flag.String("charset", "utf8mb4", "Character set for the connection")
 	tee := flag.String("tee", "", "Output file path for query results (Appends results)")
 
