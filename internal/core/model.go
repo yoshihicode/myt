@@ -40,7 +40,6 @@ type Model struct {
 	SchemaPane   int
 	OutputFormat render.OutputFormat
 	ShowHelp     bool
-	ReadWrite    bool
 
 	DBCursor     int
 	TableCursor  int
@@ -58,7 +57,7 @@ type Model struct {
 	TabMatchIdx int
 }
 
-func NewModel(configs []types.Config, rw bool) *Model {
+func NewModel(configs []types.Config) *Model {
 	ti := textarea.New()
 	ti.Placeholder = "Write your SQL query here..."
 	ti.SetHeight(5)
@@ -76,7 +75,6 @@ func NewModel(configs []types.Config, rw bool) *Model {
 		SqlInput:     ti,
 		OutputFormat: render.Grid,
 		ShowHelp:     false,
-		ReadWrite:    rw,
 	}
 
 	if len(configs) == 1 {
@@ -132,7 +130,7 @@ func (m *Model) InitConnection(cfg types.Config) error {
 		newDB, _ := database.GetDatabase(cfg.Host, cfg.Port, cfg.User, cfg.Pass, netType, defaultDB, cfg.Charset)
 
 		m.DB = newDB
-		m.Conn, _ = database.GetConnection(newDB, m.ReadWrite)
+		m.Conn, _ = database.GetConnection(newDB, m.Configs[m.ConfigCursor].ReadWrite)
 		m.LoadMetadata(defaultDB)
 	} else {
 		m.DB = db
@@ -146,7 +144,7 @@ func (m *Model) Connect(cfg types.Config) {
 	m.Close()
 
 	db, _ := database.GetDatabase(m.DBHost, m.DBPort, m.DBUser, m.DBPass, m.DBNet, dbName, cfg.Charset)
-	conn, _ := database.GetConnection(db, m.ReadWrite)
+	conn, _ := database.GetConnection(db, m.Configs[m.ConfigCursor].ReadWrite)
 	m.DB = db
 	m.Conn = conn
 	m.LoadMetadata(dbName)

@@ -56,26 +56,30 @@ func main() {
 			if configs[i].Tee == "" {
 				configs[i].Tee = *tee
 			}
+			if configs[i].ReadWrite == false {
+				configs[i].ReadWrite = *rw
+			}
 		}
 	} else {
 
 		configs = append(configs, types.Config{
-			Name:    "CLI Connection",
-			Host:    *host,
-			Port:    *port,
-			User:    *user,
-			Pass:    *pass,
-			Charset: *charset,
-			Tee:     *tee,
-			SSHHost: *sshHost,
-			SSHPort: *sshPort,
-			SSHUser: *sshUser,
-			SSHPass: *sshPass,
-			SSHKey:  *sshKey,
+			Name:      "CLI Connection",
+			Host:      *host,
+			Port:      *port,
+			User:      *user,
+			Pass:      *pass,
+			Charset:   *charset,
+			Tee:       *tee,
+			SSHHost:   *sshHost,
+			SSHPort:   *sshPort,
+			SSHUser:   *sshUser,
+			SSHPass:   *sshPass,
+			SSHKey:    *sshKey,
+			ReadWrite: *rw,
 		})
 	}
 
-	m := core.NewModel(configs, *rw)
+	m := core.NewModel(configs)
 	defer func() {
 		m.Close()
 	}()

@@ -308,7 +308,7 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 		queryCount++
 		qUpper := strings.ToUpper(query)
 
-		isAllowed := m.ReadWrite
+		isAllowed := m.Configs[m.ConfigCursor].ReadWrite
 		if !isAllowed {
 			allowedCommands := []string{"SELECT", "SHOW", "DESC", "EXPLAIN", "WITH"}
 			for _, cmd := range allowedCommands {

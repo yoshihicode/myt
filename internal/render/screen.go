@@ -59,14 +59,20 @@ func Config(configs []types.Config, configCursor int, errorMsg string) string {
 	for i, cfg := range configs {
 		cursor := "  "
 		if configCursor == i {
-			cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("▶ ")
+			cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("> ")
 		}
 
 		sshTag := ""
 		if cfg.SSHHost != "" {
 			sshTag = lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render("[SSH]")
 		}
-		s.WriteString(fmt.Sprintf("%s %s %s (%s:%d)\n", cursor, cfg.Name, sshTag, cfg.Host, cfg.Port))
+		readwriteTag := ""
+		if cfg.ReadWrite {
+			readwriteTag = lipgloss.NewStyle().Foreground(dangerColor).Bold(true).Render("[Read-Write]")
+		} else {
+			readwriteTag = lipgloss.NewStyle().Foreground(safeColor).Render("[Read Only]")
+		}
+		s.WriteString(fmt.Sprintf("%s%s (%s:%d) %s%s\n", cursor, cfg.Name, cfg.Host, cfg.Port, readwriteTag, sshTag))
 	}
 	s.WriteString("\n   [Enter] Connect | [Q/Esc] Quit\n")
 	return s.String()
