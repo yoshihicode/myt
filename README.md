@@ -101,7 +101,7 @@ myt -conf myt.yaml
 
 ## 📘 Usage
 ```
-Usage of /home/hatano/.cache/go-build/cb/cb8295f7149783b5ef70c897d713e143ce4bf37da1d2437bb5c62806a9ca5deb-d/main:
+Usage of myt:
   -charset string
         Character set for the connection (default "utf8mb4")
   -conf string
@@ -124,6 +124,8 @@ Usage of /home/hatano/.cache/go-build/cb/cb8295f7149783b5ef70c897d713e143ce4bf37
         SSH port (default 22)
   -ssh-user string
         SSH username
+  -tee string
+        Output file path for query results (Appends results)
   -user string
         MySQL username
 ```
