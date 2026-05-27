@@ -56,24 +56,98 @@ func Config(configs []types.Config, configCursor int, errorMsg string) string {
 		s.WriteStrings(lipgloss.NewStyle().Foreground(dangerColor).Render("Error: "+errorMsg), "\n\n")
 	}
 
-	for i, cfg := range configs {
-		cursor := "  "
-		if configCursor == i {
-			cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("> ")
+	maxName := 4
+	maxEndpoint := 8
+
+	type rowData struct {
+		name     string
+		endpoint string
+		mode     string
+		network  string
+	}
+
+	var rows []rowData
+	for _, cfg := range configs {
+		endpoint := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+
+		mode := "[Read Only]"
+		if cfg.ReadWrite {
+			mode = "[Read-Write]"
 		}
 
-		sshTag := ""
+		network := ""
 		if cfg.SSHHost != "" {
-			sshTag = lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render("[SSH]")
+			network = "[SSH]"
 		}
-		readwriteTag := ""
-		if cfg.ReadWrite {
-			readwriteTag = lipgloss.NewStyle().Foreground(dangerColor).Bold(true).Render("[Read-Write]")
-		} else {
-			readwriteTag = lipgloss.NewStyle().Foreground(safeColor).Render("[Read Only]")
+
+		if lipgloss.Width(cfg.Name) > maxName {
+			maxName = lipgloss.Width(cfg.Name)
 		}
-		s.WriteString(fmt.Sprintf("%s%s (%s:%d) %s%s\n", cursor, cfg.Name, cfg.Host, cfg.Port, readwriteTag, sshTag))
+		if lipgloss.Width(endpoint) > maxEndpoint {
+			maxEndpoint = lipgloss.Width(endpoint)
+		}
+
+		rows = append(rows, rowData{cfg.Name, endpoint, mode, network})
 	}
+
+	nameStyle := lipgloss.NewStyle().Width(maxName + 2)
+	endpointStyle := lipgloss.NewStyle().Width(maxEndpoint + 2)
+	modeStyle := lipgloss.NewStyle().Width(14)
+
+	headerStyle := lipgloss.NewStyle().Foreground(inactiveColor).Bold(true)
+	s.WriteStrings(
+		"   ",
+		nameStyle.Render(headerStyle.Render("NAME")),
+		endpointStyle.Render(headerStyle.Render("ENDPOINT")),
+		modeStyle.Render(headerStyle.Render("MODE")),
+		headerStyle.Render("NETWORK"),
+		"\n",
+	)
+
+	totalWidth := 3 + (maxName + 2) + (maxEndpoint + 2) + 14 + 7
+	s.WriteStrings(" "+lipgloss.NewStyle().Foreground(inactiveColor).Render(strings.Repeat("─", totalWidth)), "\n")
+
+	for i, r := range rows {
+		cursor := "  "
+		var rowStyle lipgloss.Style
+
+		if configCursor == i {
+			cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("▶ ")
+			rowStyle = lipgloss.NewStyle().Foreground(highlightColor).Bold(true)
+		} else {
+			rowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
+		}
+
+		var renderedMode string
+		if configCursor == i {
+			renderedMode = rowStyle.Render(r.mode)
+		} else {
+			modeColor := safeColor
+			if r.mode == "[Read-Write]" {
+				modeColor = dangerColor
+			}
+			renderedMode = lipgloss.NewStyle().Foreground(modeColor).Render(r.mode)
+		}
+
+		renderedSSH := ""
+		if r.network != "" {
+			if configCursor == i {
+				renderedSSH = rowStyle.Render(r.network)
+			} else {
+				renderedSSH = lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render(r.network)
+			}
+		}
+
+		s.WriteStrings(
+			cursor,
+			nameStyle.Render(rowStyle.Render(r.name)),
+			endpointStyle.Render(rowStyle.Render(r.endpoint)),
+			modeStyle.Render(renderedMode),
+			renderedSSH,
+			"\n",
+		)
+	}
+
 	s.WriteString("\n   [Enter] Connect | [Q/Esc] Quit\n")
 	return s.String()
 }
