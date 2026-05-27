@@ -322,7 +322,7 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 		finalOutput.WriteStrings("\n", header, "\n")
 
 		if !isAllowed {
-			finalOutput.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("【ERROR】Read-only mode. Restart with '-rw' flag to enable modifications.\n"))
+			finalOutput.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Error: Read-only mode. Restart with '-rw' flag to enable modifications.\n"))
 			continue
 		}
 
