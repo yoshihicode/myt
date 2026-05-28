@@ -162,13 +162,12 @@ func (m *Model) Close() {
 }
 
 func (m *Model) LoadMetadata(dbName string) {
-	dictMap := make(map[string]bool)
-	for _, kw := range database.KEYWORDS {
-		dictMap[kw] = true
-	}
 	m.TableColumns = make(map[string][]string)
-	seenTables := make(map[string]bool)
+	existT := make(map[string]bool)
+	existC := make(map[string]bool)
 	m.Tables = nil
+	var columns []string
+
 	query := fmt.Sprintf("SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '%s'", dbName)
 	rows, err := m.DB.Query(query)
 	if err == nil {
@@ -176,23 +175,52 @@ func (m *Model) LoadMetadata(dbName string) {
 		for rows.Next() {
 			var tName, cName string
 			if err := rows.Scan(&tName, &cName); err == nil {
-				dictMap[tName] = true
-				dictMap[cName] = true
 				upperTName := strings.ToUpper(tName)
 				m.TableColumns[upperTName] = append(m.TableColumns[upperTName], cName)
-				if !seenTables[tName] {
-					seenTables[tName] = true
+
+				if !existT[tName] {
+					existT[tName] = true
 					m.Tables = append(m.Tables, tName)
+				}
+				if !existC[cName] {
+					existC[cName] = true
+					columns = append(columns, cName)
 				}
 			}
 		}
 	}
+
 	sort.Strings(m.Tables)
+	sort.Strings(columns)
+
+	keywords := make([]string, len(database.KEYWORDS))
+	copy(keywords, database.KEYWORDS)
+	sort.Strings(keywords)
+
 	var newDict []string
-	for k := range dictMap {
-		newDict = append(newDict, k)
+	existAll := make(map[string]bool)
+
+	for _, t := range m.Tables {
+		if !existAll[t] {
+			existAll[t] = true
+			newDict = append(newDict, t)
+		}
 	}
-	sort.Strings(newDict)
+
+	for _, c := range columns {
+		if !existAll[c] {
+			existAll[c] = true
+			newDict = append(newDict, c)
+		}
+	}
+
+	for _, kw := range keywords {
+		if !existAll[kw] {
+			existAll[kw] = true
+			newDict = append(newDict, kw)
+		}
+	}
+
 	m.AutocompleteDict = newDict
 	m.TableCursor = 0
 	m.UpdateColumns()

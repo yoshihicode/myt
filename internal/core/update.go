@@ -7,7 +7,6 @@ import (
 	"myt/internal/render"
 	"os"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -238,10 +237,6 @@ func (m *Model) Autocomplete() {
 		lastWord = textUpToCursor[idx+size:]
 	}
 
-	if lastWord == "" {
-		return
-	}
-
 	if strings.Contains(lastWord, ".") {
 		parts := strings.LastIndex(lastWord, ".")
 		aliasOrTable := lastWord[:parts]
@@ -268,12 +263,15 @@ func (m *Model) Autocomplete() {
 		}
 
 		if !findCols(aliasOrTable) {
-			cleanText := strings.ReplaceAll(text, "`", "")
+			//cleanText := strings.ReplaceAll(text, "`", "")
+			cleanText := strings.ReplaceAll(textUpToCursor, "`", "")
 			pattern := `(?i)(?:FROM|JOIN|,)\s+([^\s,()]+)\s+(?:AS\s+)?` + regexp.QuoteMeta(aliasOrTable) + `(?:\s|$|,|\))`
 			re := regexp.MustCompile(pattern)
 
 			matches := re.FindAllStringSubmatch(cleanText, -1)
-			for _, match := range matches {
+			//for _, match := range matches {
+			for i := len(matches) - 1; i >= 0; i-- {
+				match := matches[i]
 				if len(match) >= 2 {
 					tableName := match[1]
 					if strings.Contains(tableName, ".") {
@@ -296,7 +294,6 @@ func (m *Model) Autocomplete() {
 	}
 
 	if len(m.TabMatches) > 0 {
-		sort.Strings(m.TabMatches)
 		m.TabMatchIdx = 0
 
 		lastWordRunesLen := len([]rune(lastWord))
