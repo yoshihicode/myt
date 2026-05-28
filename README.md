@@ -1,4 +1,5 @@
 # MySQL Tiny Tui Client (`myt`)
+![myt](screenshot.gif)  
 `myt` is terminal based MySQL/MariaDB client.
 
 ## ⚙️ Features
