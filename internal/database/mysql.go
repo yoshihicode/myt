@@ -14,7 +14,7 @@ import (
 type QueryResult struct {
 	Columns []string
 	Rows    []map[string]interface{}
-	Message string // "Query OK" などのメッセージ
+	Message string
 }
 
 func Setup(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType string) error {

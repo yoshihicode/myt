@@ -283,7 +283,6 @@ func (m *Model) Autocomplete() {
 			re := regexp.MustCompile(pattern)
 
 			matches := re.FindAllStringSubmatch(cleanText, -1)
-			//for _, match := range matches {
 			for i := len(matches) - 1; i >= 0; i-- {
 				match := matches[i]
 				if len(match) >= 2 {

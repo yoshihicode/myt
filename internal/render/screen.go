@@ -14,7 +14,6 @@ var dangerColor = lipgloss.Color("9")
 var safeColor = lipgloss.Color("10")
 
 func Help() string {
-	//var s MyStringBuilder
 	helpContent := lipgloss.JoinVertical(lipgloss.Left,
 		lipgloss.NewStyle().Foreground(highlightColor).Bold(true).Render("== Global Shortcuts =="),
 		"  [Tab]          Switch Panel (Schema <-> SQL)",
@@ -42,8 +41,6 @@ func Help() string {
 		Height(16).
 		Padding(0, 3).
 		Render(helpContent)
-
-	//s.WriteStrings(helpBox, "\n", lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render(" [Ctrl+H] / [Esc] Close Help"), "\n")
 
 	return helpBox
 }
