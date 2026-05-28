@@ -141,6 +141,7 @@ Usage of myt:
 | Ctrl+R | Reload metadata/schema from the current database |
 | Ctrl+C | Exit Application |
 | Ctrl+H | Toggle Help window |
+| Esc | Disconnect and return to the connection selection page (only when started with a configuration file) |
 
 ### Schema Panel
 | Key | Action |
