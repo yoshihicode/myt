@@ -202,6 +202,21 @@ func (m *Model) Autocomplete() {
 	}
 
 	textUpToCursor := string(runes[:absoluteRunePos])
+	textAfterCursor := string(runes[absoluteRunePos:])
+
+	startIdx := strings.LastIndex(textUpToCursor, ";")
+	currentQueryStart := textUpToCursor
+	if startIdx != -1 {
+		currentQueryStart = textUpToCursor[startIdx+1:]
+	}
+
+	endIdx := strings.Index(textAfterCursor, ";")
+	currentQueryEnd := textAfterCursor
+	if endIdx != -1 {
+		currentQueryEnd = textAfterCursor[:endIdx]
+	}
+
+	currentQueryText := currentQueryStart + currentQueryEnd
 
 	if len(m.TabMatches) > 0 {
 		currentMatch := m.TabMatches[m.TabMatchIdx]
@@ -263,8 +278,7 @@ func (m *Model) Autocomplete() {
 		}
 
 		if !findCols(aliasOrTable) {
-			//cleanText := strings.ReplaceAll(text, "`", "")
-			cleanText := strings.ReplaceAll(textUpToCursor, "`", "")
+			cleanText := strings.ReplaceAll(currentQueryText, "`", "")
 			pattern := `(?i)(?:FROM|JOIN|,)\s+([^\s,()]+)\s+(?:AS\s+)?` + regexp.QuoteMeta(aliasOrTable) + `(?:\s|$|,|\))`
 			re := regexp.MustCompile(pattern)
 
