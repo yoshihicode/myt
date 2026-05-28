@@ -98,6 +98,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		if msg.String() == "esc" {
+			if m.ConnectionSelect {
+				m.Close()
+				m.State = SelectConfig
+				m.ErrorMsg = ""
+				return m, nil
+			}
+		}
 		if m.FocusSQL {
 			if msg.String() == "ctrl+space" || msg.String() == "ctrl+@" || msg.String() == "ctrl+n" {
 				m.Autocomplete()

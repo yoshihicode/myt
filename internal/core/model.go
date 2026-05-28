@@ -22,11 +22,12 @@ const (
 )
 
 type Model struct {
-	State        AppState
-	Configs      []types.Config
-	ConfigCursor int
-	ErrorMsg     string
-	Tee          string
+	State            AppState
+	Configs          []types.Config
+	ConfigCursor     int
+	ErrorMsg         string
+	Tee              string
+	ConnectionSelect bool
 
 	DB               *sql.DB
 	Conn             *sql.Conn
@@ -57,7 +58,7 @@ type Model struct {
 	TabMatchIdx int
 }
 
-func NewModel(configs []types.Config) *Model {
+func NewModel(configs []types.Config, conSelect bool) *Model {
 	ti := textarea.New()
 	ti.Placeholder = "Write your SQL query here..."
 	ti.SetHeight(5)
@@ -67,14 +68,15 @@ func NewModel(configs []types.Config) *Model {
 	ti.Blur()
 
 	m := &Model{
-		State:        SelectConfig,
-		Configs:      configs,
-		ConfigCursor: 0,
-		FocusSQL:     false,
-		SchemaPane:   0,
-		SqlInput:     ti,
-		OutputFormat: render.Grid,
-		ShowHelp:     false,
+		State:            SelectConfig,
+		Configs:          configs,
+		ConfigCursor:     0,
+		ConnectionSelect: conSelect,
+		FocusSQL:         false,
+		SchemaPane:       0,
+		SqlInput:         ti,
+		OutputFormat:     render.Grid,
+		ShowHelp:         false,
 	}
 
 	if len(configs) == 1 {

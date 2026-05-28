@@ -79,7 +79,7 @@ func main() {
 		})
 	}
 
-	m := core.NewModel(configs)
+	m := core.NewModel(configs, *confPath != "")
 	defer func() {
 		m.Close()
 	}()
