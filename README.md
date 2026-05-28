@@ -71,7 +71,7 @@ myt -conf myt.yaml
 | user | string | MySQL username. |||
 | pass | string | MySQL password. || Leave empty if no password. |
 | charset| string | Character set for the MySQL connection. | utf8mb4 ||
-| tee | string | Output file path for query results (appended), mimicking the MySQL `tee` command. | Optional |
+| tee | string | Output file path for query results (appended), mimicking the MySQL `tee` command. |||
 | ssh_host| string | SSH bastion host address for tunneling. |||
 | ssh_port| int | SSH bastion server port number. | 22 ||
 | ssh_user| string | SSH username for the bastion server. |||
