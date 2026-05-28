@@ -1,33 +1,78 @@
-- name: production-db
-  host: 10.0.0.5
+# ==============================================================================
+# myt - MySQL/MariaDB Tiny TUI Client Configuration Sample
+# ==============================================================================
+# This file contains all possible configuration patterns for myt.
+# You can load this file by launching the app with: myt -conf=myt.yaml
+
+# ------------------------------------------------------------------------------
+# Standard Local Connection with default Character Set (Read-Write Mode)
+# Enforces 'autocommit=0' in Read-Write mode to prevent immediate unintended commits.
+# ------------------------------------------------------------------------------
+- name: local-dev-rw
+  host: 127.0.0.1
   port: 3306
   user: root
-  pass: prod_secret_pass
+  password: password123
+  database: dev_db
+  tee: local-dev-rw.logs
+  readwrite: true
+
+# ------------------------------------------------------------------------------
+# Standard Remote Connection (Default Read-Only Mode)
+# ------------------------------------------------------------------------------
+- name: production-replica-ro
+  host: db-replica.example.com
+  port: 3306
+  user: analytics_user
+  password: secure_password_456
+  database: production_db
+  tee: production-replica-ro.logs
+  readwrite: false
   charset: utf8mb4
-  ssh_host: 192.168.1.10
-  ssh_port: 22
-  ssh_user: ubuntu
-  ssh_key: /home/user/.ssh/id_rsa
 
-- name: staging-db-rw
-  host: 127.0.0.1
-  port: 3306
-  user: root
-  pass: local_pass
-  tee:  sql.logs
-  read_write: true
+# ------------------------------------------------------------------------------
+# SSH Tunneling via Bastion Host using Private Key (Read-Write Mode)
+# ------------------------------------------------------------------------------
+- name: production-main-via-ssh-key
+  host: 10.0.1.25          # Internal DB IP/Host (accessible from the bastion host)
+  port: 3306               # Internal DB port
+  user: primary_admin
+  password: admin_db_password_789
+  database: e_commerce_db
+  tee: production-main-via-ssh-key.logs
+  readwrite: true          # Allows DML execution with enforced autocommit=0
+  charset: utf8mb4
+  sshhost: bastion.example.com
+  sshport: 22
+  sshuser: ec2-user
+  sshkey: ~/.ssh/id_rsa    # Path to your local SSH private key file
 
-- name: staging-db
-  host: 127.0.0.1
+# ------------------------------------------------------------------------------
+# SSH Tunneling via Bastion Host using Password (Read-Only Mode)
+# ------------------------------------------------------------------------------
+- name: staging-db-via-ssh-pass
+  host: 192.168.10.50
   port: 3306
-  user: root
-  pass: local_pass
-  tee:  sql_staging.logs
-  read_write: false
+  user: audit_user
+  password: staging_db_password
+  database: staging_db
+  tee: staging-db-via-ssh-pass.logs
+  readwrite: false
+  charset: utf8mb4
+  sshhost: jump.staging.internal
+  sshport: 22
+  sshuser: deploy_worker
+  sshpassword: ssh_login_password_xyz
 
-- name: localhost
-  host: localhost
+# ------------------------------------------------------------------------------
+# Legacy Database Connection with Custom Character Set
+# ------------------------------------------------------------------------------
+- name: legacy-archive-utf8
+  host: archive-db.local
   port: 3306
-  user: testuser
-  pass: password
-  read_write: true
+  user: archive_reader
+  password: legacy_password_999
+  database: old_records_db
+  tee: legacy-archive-utf8.logs
+  readwrite: false
+  charset: utf8
