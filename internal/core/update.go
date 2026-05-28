@@ -101,7 +101,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "esc" {
 			if m.ConnectionSelect {
 				m.Close()
+				m.DBCursor = 0
+				m.TableCursor = 0
+				m.ColumnCursor = 0
 				m.State = SelectConfig
+				m.FocusSQL = false
+				m.SchemaPane = 0
 				m.ErrorMsg = ""
 				return m, nil
 			}
