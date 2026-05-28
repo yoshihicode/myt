@@ -1,5 +1,5 @@
 # MySQL Tiny Tui Client (`myt`)
-`myt` is terminal based MySQL client.
+`myt` is terminal based MySQL/MariaDB client.
 
 ## ⚙️ Features
 * **🛡️ Safety First:** Default Read-Only mode and enforced `autocommit=0` in Read-Write mode to protect your data. 
