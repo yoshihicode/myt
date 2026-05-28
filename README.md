@@ -66,7 +66,7 @@ myt -conf myt.yaml
 |Field|Type|Description|Default|Note|
 | --- | --- | --- | --- | --- |
 | name | string | Required. A unique name for this connection configuration. || Used as the dynamic network name. |
-| host | string | MySQL server host address. | 127.0.0.1 ||
+| host | string | MySQL server host address. |||
 | port | int | MySQL server port number.| 3306 ||
 | user | string | MySQL username. |||
 | pass | string | MySQL password. || Leave empty if no password. |

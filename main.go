@@ -16,7 +16,7 @@ import (
 func main() {
 	confPath := flag.String("conf", "", "Path to YAML config file (e.g., myt.yaml)")
 
-	host := flag.String("host", "127.0.0.1", "MySQL host address")
+	host := flag.String("host", "", "MySQL host address")
 	port := flag.Int("port", 3306, "MySQL port")
 	user := flag.String("user", "", "MySQL username")
 	pass := flag.String("pass", "", "MySQL password")
@@ -83,6 +83,9 @@ func main() {
 	defer func() {
 		m.Close()
 	}()
+	if len(m.ErrorMsg) != 0 {
+		log.Fatalf("Application error: %v", m.ErrorMsg)
+	}
 
 	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
