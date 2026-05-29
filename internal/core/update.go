@@ -178,31 +178,31 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) Autocomplete() {
 	m.SqlInput.InsertString("\uF000")
-	textWithSentinel := m.SqlInput.Value()
+	v := m.SqlInput.Value()
 
 	m.SqlInput, _ = m.SqlInput.Update(tea.KeyMsg{Type: tea.KeyBackspace})
 
-	runesWithSentinel := []rune(textWithSentinel)
-	absoluteRunePos := -1
-	for i, r := range runesWithSentinel {
+	r := []rune(v)
+	pos := -1
+	for i, r := range r {
 		if r == '\uF000' {
-			absoluteRunePos = i
+			pos = i
 			break
 		}
 	}
 
-	if absoluteRunePos == -1 {
+	if pos == -1 {
 		return
 	}
 
 	text := m.SqlInput.Value()
 	runes := []rune(text)
-	if absoluteRunePos > len(runes) {
-		absoluteRunePos = len(runes)
+	if pos > len(runes) {
+		pos = len(runes)
 	}
 
-	textUpToCursor := string(runes[:absoluteRunePos])
-	textAfterCursor := string(runes[absoluteRunePos:])
+	textUpToCursor := string(runes[:pos])
+	textAfterCursor := string(runes[pos:])
 
 	startIdx := strings.LastIndex(textUpToCursor, ";")
 	currentQueryStart := textUpToCursor
@@ -309,8 +309,8 @@ func (m *Model) Autocomplete() {
 	if len(m.TabMatches) > 0 {
 		m.TabMatchIdx = 0
 
-		lastWordRunesLen := len([]rune(lastWord))
-		for i := 0; i < lastWordRunesLen; i++ {
+		l := len([]rune(lastWord))
+		for i := 0; i < l; i++ {
 			m.SqlInput, _ = m.SqlInput.Update(tea.KeyMsg{Type: tea.KeyBackspace})
 		}
 		m.SqlInput.InsertString(m.TabMatches[0])
@@ -320,15 +320,15 @@ func (m *Model) Autocomplete() {
 func (m *Model) ExecuteSQL() tea.Cmd {
 	rawInput := m.SqlInput.Value()
 	queries := strings.Split(rawInput, ";")
-	var finalOutput render.MyStringBuilder
-	queryCount := 0
+	var output render.MyStringBuilder
+	cnt := 0
 
 	for _, q := range queries {
 		query := strings.TrimSpace(q)
 		if query == "" {
 			continue
 		}
-		queryCount++
+		cnt++
 		qUpper := strings.ToUpper(query)
 
 		isAllowed := m.Configs[m.ConfigCursor].ReadWrite
@@ -342,25 +342,25 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 			}
 		}
 		nowStr := time.Now().Format("2006-01-02 15:04:05.000")
-		header := lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render(fmt.Sprintf("--- Result [%s]: [%d] %s ---", nowStr, queryCount, query))
-		finalOutput.WriteStrings("\n", header, "\n")
+		header := lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render(fmt.Sprintf("--- Result [%s]: [%d] %s ---", nowStr, cnt, query))
+		output.WriteStrings("\n", header, "\n")
 
 		if !isAllowed {
-			finalOutput.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Error: Read-only mode. Restart with '-rw' flag to enable modifications.\n"))
+			output.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Error: Read-only mode. Restart with '-rw' flag to enable modifications.\n"))
 			continue
 		}
 
 		res, err := database.ExecuteQuery(context.Background(), m.Conn, query)
 		if err != nil {
-			finalOutput.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: %v\n", err)))
+			output.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: %v\n", err)))
 			continue
 		}
 
-		formatted := render.FormatResult(res, m.OutputFormat)
-		finalOutput.WriteString(formatted)
+		formatted := render.Format(res, m.OutputFormat)
+		output.WriteString(formatted)
 	}
 
-	if finalOutput.Len() == 0 {
+	if output.Len() == 0 {
 		return nil
 	}
 
@@ -371,13 +371,13 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 		}
 		defer f.Close()
 
-		if _, err := f.WriteString(ansiRegex.ReplaceAllString(finalOutput.String(), "")); err != nil {
+		if _, err := f.WriteString(ansiRegex.ReplaceAllString(output.String(), "")); err != nil {
 			return tea.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: Failed to write to file: %v", err)))
 		}
 	}
 
 	var cmds []tea.Cmd
-	lines := strings.Split(finalOutput.String(), "\n")
+	lines := strings.Split(output.String(), "\n")
 	for i, line := range lines {
 		if i == len(lines)-1 && line == "" {
 			continue

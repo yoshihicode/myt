@@ -101,8 +101,8 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 		"\n",
 	)
 
-	totalWidth := 3 + (maxName + 2) + (maxEndpoint + 2) + 14 + 7
-	s.WriteStrings(" "+lipgloss.NewStyle().Foreground(inactiveColor).Render(strings.Repeat("─", totalWidth)), "\n")
+	total := 3 + (maxName + 2) + (maxEndpoint + 2) + 14 + 7
+	s.WriteStrings(" "+lipgloss.NewStyle().Foreground(inactiveColor).Render(strings.Repeat("─", total)), "\n")
 
 	for i, r := range rows {
 		cursor := "  "
@@ -126,12 +126,12 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 			renderedMode = lipgloss.NewStyle().Foreground(modeColor).Render(r.mode)
 		}
 
-		renderedSSH := ""
+		ssh := ""
 		if r.network != "" {
 			if configCursor == i {
-				renderedSSH = rowStyle.Render(r.network)
+				ssh = rowStyle.Render(r.network)
 			} else {
-				renderedSSH = lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render(r.network)
+				ssh = lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render(r.network)
 			}
 		}
 
@@ -140,7 +140,7 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 			nameStyle.Render(rowStyle.Render(r.name)),
 			endpointStyle.Render(rowStyle.Render(r.endpoint)),
 			modeStyle.Render(renderedMode),
-			renderedSSH,
+			ssh,
 			"\n",
 		)
 	}

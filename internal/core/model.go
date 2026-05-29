@@ -100,7 +100,7 @@ func (m *Model) InitConnection(cfg config.Config) error {
 	if cfg.SSHHost != "" {
 		// Generate a unique identifier for each SSH connection
 		netType = fmt.Sprintf("mysql+tcp+%s", cfg.Name)
-		err := database.Setup(cfg.SSHHost, cfg.SSHPort, cfg.SSHUser, cfg.SSHPass, cfg.SSHKey, netType)
+		err := database.SetupSSH(cfg.SSHHost, cfg.SSHPort, cfg.SSHUser, cfg.SSHPass, cfg.SSHKey, netType)
 		if err != nil {
 			return err
 		}

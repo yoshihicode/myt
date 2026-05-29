@@ -17,7 +17,7 @@ type QueryResult struct {
 	Message string
 }
 
-func Setup(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType string) error {
+func SetupSSH(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType string) error {
 	var authMethods []ssh.AuthMethod
 	if sshKey != "" {
 		keyData, err := os.ReadFile(sshKey)
@@ -71,8 +71,8 @@ func GetDatabases(db *sql.DB) ([]string, error) {
 }
 
 func GetDatabase(host string, port int, user, pass, netType string, dbName string, charset string) (*sql.DB, error) {
-	dsnWithDB := fmt.Sprintf("%s:%s@%s(%s:%d)/%s?charset=%s", user, pass, netType, host, port, dbName, charset)
-	db, err := sql.Open("mysql", dsnWithDB)
+	dns := fmt.Sprintf("%s:%s@%s(%s:%d)/%s?charset=%s", user, pass, netType, host, port, dbName, charset)
+	db, err := sql.Open("mysql", dns)
 	if err != nil {
 		if db != nil {
 			db.Close()

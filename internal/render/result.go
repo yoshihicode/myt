@@ -21,7 +21,7 @@ const (
 
 var FormatNames = []string{"GRID", "MARKDOWN", "CSV", "JSON"}
 
-func FormatResult(res *database.QueryResult, format OutputFormat) string {
+func Format(res *database.QueryResult, format OutputFormat) string {
 	if res.Message != "" {
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Render(res.Message + "\n")
 	}
