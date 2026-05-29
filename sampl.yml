@@ -31,38 +31,38 @@
   charset: utf8mb4
 
 # ------------------------------------------------------------------------------
-# SSH Tunneling via Bastion Host using Private Key (Read-Write Mode)
+# ssh_ Tunneling via Bastion Host using Private Key (Read-Write Mode)
 # ------------------------------------------------------------------------------
-- name: production-main-via-ssh-key
+- name: production-main-via-ssh_-key
   host: 10.0.1.25          # Internal DB IP/Host (accessible from the bastion host)
   port: 3306               # Internal DB port
   user: primary_admin
   password: admin_db_password_789
   database: e_commerce_db
-  tee: production-main-via-ssh-key.logs
+  tee: production-main-via-ssh_-key.logs
   readwrite: true          # Allows DML execution with enforced autocommit=0
   charset: utf8mb4
-  sshhost: bastion.example.com
-  sshport: 22
-  sshuser: ec2-user
-  sshkey: ~/.ssh/id_rsa    # Path to your local SSH private key file
+  ssh_host: bastion.example.com
+  ssh_port: 22
+  ssh_user: ec2-user
+  ssh_key: ~/.ssh_/id_rsa    # Path to your local ssh_ private key file
 
 # ------------------------------------------------------------------------------
-# SSH Tunneling via Bastion Host using Password (Read-Only Mode)
+# ssh_ Tunneling via Bastion Host using Password (Read-Only Mode)
 # ------------------------------------------------------------------------------
-- name: staging-db-via-ssh-pass
+- name: staging-db-via-ssh_-pass
   host: 192.168.10.50
   port: 3306
   user: audit_user
   password: staging_db_password
   database: staging_db
-  tee: staging-db-via-ssh-pass.logs
+  tee: staging-db-via-ssh_-pass.logs
   readwrite: false
   charset: utf8mb4
-  sshhost: jump.staging.internal
-  sshport: 22
-  sshuser: deploy_worker
-  sshpassword: ssh_login_password_xyz
+  ssh_host: jump.staging.internal
+  ssh_port: 22
+  ssh_user: deploy_worker
+  ssh_password: ssh__login_password_xyz
 
 # ------------------------------------------------------------------------------
 # Legacy Database Connection with Custom Character Set

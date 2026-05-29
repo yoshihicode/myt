@@ -70,13 +70,13 @@ myt -conf myt.yaml
 | host | string | MySQL server host address. |||
 | port | int | MySQL server port number.| 3306 ||
 | user | string | MySQL username. |||
-| pass | string | MySQL password. || Leave empty if no password. |
+| password | string | MySQL password. || Leave empty if no password. |
 | charset| string | Character set for the MySQL connection. | utf8mb4 ||
 | tee | string | Output file path for query results (appended), mimicking the MySQL `tee` command. |||
 | ssh_host| string | SSH bastion host address for tunneling. |||
 | ssh_port| int | SSH bastion server port number. | 22 ||
 | ssh_user| string | SSH username for the bastion server. |||
-| ssh_pass| string | SSH password for the bastion server. || Used if ssh_key is empty. |
+| ssh_password| string | SSH password for the bastion server. || Used if ssh_key is empty. |
 | ssh_key| string | Path to your SSH private key. || e.g. /home/user/.ssh/id_rsa |
 | read_write| bool | Enable read-write mode  | false | Allows DML with autocommit=0 |
 
@@ -86,7 +86,7 @@ myt -conf myt.yaml
   host: 10.0.0.5
   port: 3306
   user: root
-  pass: prod_secret_pass
+  password: prod_secret_password
   charset: utf8mb4
   ssh_host: 192.168.1.10
   ssh_port: 22
@@ -97,10 +97,11 @@ myt -conf myt.yaml
   host: 127.0.0.1
   port: 3306
   user: root
-  pass: local_pass
+  password: local_password
   tee:  sql.logs
   readw_rite: true
 ```
+see [sampl.yml](sampl.yml)  
 
 ## 📘 Usage
 ```
@@ -110,8 +111,8 @@ Usage of myt:
   -conf string
         Path to YAML config file (e.g., myt.yaml)
   -host string
-        MySQL host address (default "127.0.0.1")
-  -pass string
+        MySQL host address
+  -password string
         MySQL password
   -port int
         MySQL port (default 3306)
@@ -121,7 +122,7 @@ Usage of myt:
         SSH bastion host address (e.g., 192.168.1.10)
   -ssh-key string
         Path to SSH private key (e.g., ~/.ssh/id_rsa)
-  -ssh-pass string
+  -ssh-password string
         SSH password
   -ssh-port int
         SSH port (default 22)
