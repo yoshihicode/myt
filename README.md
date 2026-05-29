@@ -46,15 +46,15 @@ tar -xzvf myt_windows_amd64.tar.gz
 ## 🚀 Quick start
 ### Direct Connection
 ```bash
-myt -host=127.0.0.1 -port=3306 -user=root -pass=your_password
+myt -host=127.0.0.1 -port=3306 -user=root -password=your_password
 ```
 ### SSH tunnel (Password Authentication)
 ```bash
-myt -host=10.0.0.5 -user=db_user -pass=db_pass -ssh-host=192.168.1.10 -ssh-port=22 -ssh-user=bastion_user -ssh-pass=bastion_pass
+myt -host=10.0.0.5 -user=db_user -password=db_password -ssh-host=192.168.1.10 -ssh-port=22 -ssh-user=bastion_user -ssh-password=bastion_password
 ```
 ### SSH tunnel (SSH Key Authentication)
 ```bash
-myt -host=10.0.0.5 -user=db_user -pass=db_pass -ssh-host=192.168.1.10 -ssh-user=bastion_user -ssh-key=$HOME/.ssh/id_rsa
+myt -host=10.0.0.5 -user=db_user -password=db_password -ssh-host=192.168.1.10 -ssh-user=bastion_user -ssh-key=$HOME/.ssh/id_rsa
 ```
 ### Configuration File
 
