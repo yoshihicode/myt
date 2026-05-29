@@ -1,4 +1,4 @@
-package types
+package config
 
 // Config YAML
 type Config struct {

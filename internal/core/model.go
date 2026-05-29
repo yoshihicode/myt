@@ -3,8 +3,8 @@ package core
 import (
 	"database/sql"
 	"fmt"
+	"myt/internal/config"
 	"myt/internal/database"
-	"myt/internal/types"
 	"sort"
 	"strings"
 
@@ -23,7 +23,7 @@ const (
 
 type Model struct {
 	State            AppState
-	Configs          []types.Config
+	Configs          []config.Config
 	ConfigCursor     int
 	ErrorMsg         string
 	Tee              string
@@ -58,7 +58,7 @@ type Model struct {
 	TabMatchIdx int
 }
 
-func NewModel(configs []types.Config, conSelect bool) *Model {
+func NewModel(configs []config.Config, conSelect bool) *Model {
 	ti := textarea.New()
 	ti.Placeholder = "Write your SQL query here..."
 	ti.SetHeight(5)
@@ -95,7 +95,7 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) InitConnection(cfg types.Config) error {
+func (m *Model) InitConnection(cfg config.Config) error {
 	netType := "tcp"
 	if cfg.SSHHost != "" {
 		// Generate a unique identifier for each SSH connection
@@ -141,7 +141,7 @@ func (m *Model) InitConnection(cfg types.Config) error {
 	return nil
 }
 
-func (m *Model) Connect(cfg types.Config) {
+func (m *Model) Connect(cfg config.Config) {
 	dbName := m.Databases[m.DBCursor]
 	m.Close()
 

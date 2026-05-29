@@ -2,7 +2,7 @@ package render
 
 import (
 	"fmt"
-	"myt/internal/types"
+	"myt/internal/config"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -45,7 +45,7 @@ func Help() string {
 	return helpBox
 }
 
-func Config(configs []types.Config, configCursor int, errorMsg string) string {
+func Config(configs []config.Config, configCursor int, errorMsg string) string {
 	var s MyStringBuilder
 	s.WriteStrings(lipgloss.NewStyle().Foreground(highlightColor).Bold(true).Render("=== Select Connection ==="), "\n\n")
 

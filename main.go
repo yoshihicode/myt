@@ -9,8 +9,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/yaml.v3"
 
+	"myt/internal/config"
 	"myt/internal/core"
-	"myt/internal/types"
 )
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 	sshKey := flag.String("ssh-key", "", "Path to SSH private key (e.g., ~/.ssh/id_rsa)")
 	flag.Parse()
 
-	var configs []types.Config
+	var configs []config.Config
 
 	if *confPath != "" {
 		data, err := os.ReadFile(*confPath)
@@ -62,7 +62,7 @@ func main() {
 		}
 	} else {
 
-		configs = append(configs, types.Config{
+		configs = append(configs, config.Config{
 			Name:      "CLI Connection",
 			Host:      *host,
 			Port:      *port,
