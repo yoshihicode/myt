@@ -44,6 +44,8 @@ tar -xzvf myt_windows_amd64.tar.gz
 ```
 
 ## 🚀 Quick start
+💡 **Security Tip:** For both CLI flags and Configuration files, you can omit the `-password` or `-ssh-password` fields. `myt` will securely prompt you for them at startup with masked input.
+
 ### Direct Connection
 ```bash
 myt -host=127.0.0.1 -port=3306 -user=root -password=your_password
