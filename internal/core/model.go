@@ -36,6 +36,7 @@ type Model struct {
 	Columns          []string
 	TableColumns     map[string][]string
 	AutocompleteDict []string
+	TxPending        bool
 
 	FocusSQL     bool
 	SchemaPane   int
@@ -159,6 +160,7 @@ func (m *Model) Close() {
 	if m.DB != nil {
 		m.DB.Close()
 	}
+	m.TxPending = false
 }
 
 func (m *Model) LoadMetadata(dbName string) {

@@ -355,7 +355,18 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 			output.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: %v\n", err)))
 			continue
 		}
+		if isAllowed {
+			if strings.HasPrefix(qUpper, "UPDATE") ||
+				strings.HasPrefix(qUpper, "INSERT") ||
+				strings.HasPrefix(qUpper, "DELETE") ||
+				strings.HasPrefix(qUpper, "REPLACE") {
+				m.TxPending = true
+			}
 
+			if strings.HasPrefix(qUpper, "COMMIT") || strings.HasPrefix(qUpper, "ROLLBACK") {
+				m.TxPending = false
+			}
+		}
 		formatted := render.Format(res, m.OutputFormat)
 		output.WriteString(formatted)
 	}

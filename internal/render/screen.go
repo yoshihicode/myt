@@ -278,7 +278,7 @@ func truncateText(name string, maxWidth int) string {
 	return sb.String() + ".."
 }
 
-func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool) string {
+func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPending bool) string {
 	sqlBorderColor := inactiveColor
 	if isFocused {
 		sqlBorderColor = highlightColor
@@ -300,13 +300,24 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool) strin
 	if rw {
 		modeStr = lipgloss.NewStyle().Foreground(dangerColor).Bold(true).Render("[Read-Write]")
 	}
-
-	statusBar := lipgloss.JoinHorizontal(lipgloss.Top,
+	metaInfo := lipgloss.JoinHorizontal(lipgloss.Top,
 		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render("Mode: "),
 		modeStr,
 		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render("  |  Format: "),
 		formatBar,
 	)
+
+	var statusBar string
+	if rw && txPending {
+		txAlert := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("208")).
+			Bold(true).
+			Render("⚠️ Uncommitted changes! Please run COMMIT or ROLLBACK.")
+
+		statusBar = lipgloss.JoinVertical(lipgloss.Left, metaInfo, txAlert)
+	} else {
+		statusBar = metaInfo
+	}
 
 	sqlContent := lipgloss.JoinVertical(lipgloss.Left, text, "", statusBar)
 
