@@ -22,7 +22,7 @@ tar -xzvf myt_linux_amd64.tar.gz
 sudo mv myt /usr/local/bin/
 
 # Run
-myt -host=127.0.0.1 -port=3306 -user=root -pass=your_password
+myt -host=127.0.0.1 -port=3306 -user=root -password=your_password
 ```
 
 ### 🍎🍺 macOS / Homebrew
@@ -31,7 +31,7 @@ brew tap yoshihicode/tap
 brew install myt
 
 # Run
-myt -host=127.0.0.1=-port=3306 -user=root -pass=your_password
+myt -host=127.0.0.1 -port=3306 -user=root -password=your_password
 ```
 
 ### 🪟 Windows
@@ -40,7 +40,7 @@ Invoke-WebRequest -OutFile myt_windows_amd64.tar.gz https://github.com/yoshihico
 tar -xzvf myt_windows_amd64.tar.gz
 
 # Run
-.\myt.exe -host=127.0.0.1 -port=3306 -user=root -pass=your_password
+.\myt.exe -host=127.0.0.1 -port=3306 -user=root -passwordyour_password
 ```
 
 ## 🚀 Quick start
@@ -99,9 +99,9 @@ myt -conf myt.yaml
   user: root
   password: local_password
   tee:  sql.logs
-  readw_rite: true
+  read_rite: true
 ```
-see [sampl.yml](sampl.yml)  
+see [sample.yml](sample.yml)  
 
 ## 📘 Usage
 ```
