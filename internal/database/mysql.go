@@ -29,9 +29,21 @@ func SetupSSH(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType str
 			return fmt.Errorf("Failed to parse the SSH private key: %v", err)
 		}
 		authMethods = append(authMethods, ssh.PublicKeys(signer))
-	} else if sshPass != "" {
+	}
+	if sshPass != "" {
 		authMethods = append(authMethods, ssh.Password(sshPass))
-	} else {
+		authMethods = append(authMethods, ssh.KeyboardInteractive(
+			func(sshUser, instruction string, questions []string, echos []bool) ([]string, error) {
+				answers := make([]string, len(questions))
+				for i := range questions {
+					answers[i] = sshPass
+				}
+				return answers, nil
+			},
+		))
+
+	}
+	if len(authMethods) == 0 {
 		return fmt.Errorf("SSH connection requires either a password or a private key")
 	}
 

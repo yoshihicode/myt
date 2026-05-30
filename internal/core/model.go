@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textarea"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 
 	"myt/internal/render"
@@ -18,6 +19,7 @@ type AppState int
 
 const (
 	SelectConfig AppState = iota
+	PasswordPrompt
 	Main
 )
 
@@ -28,6 +30,9 @@ type Model struct {
 	ErrorMsg         string
 	Tee              string
 	ConnectionSelect bool
+
+	PasswordInput textinput.Model
+	PromptTarget  string
 
 	DB               *sql.DB
 	Conn             *sql.Conn
@@ -81,7 +86,23 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 	}
 
 	if len(configs) == 1 {
-		err := m.InitConnection(configs[0])
+		// ssh password
+		if m.Configs[m.ConfigCursor].SSHUser != "" && m.Configs[m.ConfigCursor].SSHKey == "" && m.Configs[m.ConfigCursor].SSHPass == "" {
+			m.SetPasswordSubmit("SSH")
+			return m
+		}
+
+		// password
+		if m.Configs[m.ConfigCursor].Pass == "" {
+			m.SetPasswordSubmit("DB")
+			return m
+		}
+
+		netType, err := m.GetNetType()
+		if err != nil {
+			m.ErrorMsg = err.Error()
+		}
+		err = m.InitConnection(m.Configs[m.ConfigCursor], netType)
 		if err == nil {
 			m.State = Main
 		} else {
@@ -92,20 +113,41 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 	return m
 }
 
+func (m *Model) SetPasswordSubmit(target string) {
+	m.State = PasswordPrompt
+	m.PromptTarget = target
+	m.PasswordInput = textinput.New()
+	if target == "SSH" {
+		m.PasswordInput.Placeholder = "Enter SSH Password"
+	} else {
+		m.PasswordInput.Placeholder = "Enter MySQL Password"
+	}
+	m.PasswordInput.EchoMode = textinput.EchoPassword
+	m.PasswordInput.Focus()
+}
+
 func (m *Model) Init() tea.Cmd {
+	if m.State == PasswordPrompt {
+		return textinput.Blink
+	}
 	return nil
 }
 
-func (m *Model) InitConnection(cfg config.Config) error {
+func (m *Model) GetNetType() (string, error) {
 	netType := "tcp"
-	if cfg.SSHHost != "" {
+	if m.Configs[m.ConfigCursor].SSHHost != "" {
 		// Generate a unique identifier for each SSH connection
-		netType = fmt.Sprintf("mysql+tcp+%s", cfg.Name)
-		err := database.SetupSSH(cfg.SSHHost, cfg.SSHPort, cfg.SSHUser, cfg.SSHPass, cfg.SSHKey, netType)
+		netType = fmt.Sprintf("mysql+tcp+%s", m.Configs[m.ConfigCursor].Name)
+
+		err := database.SetupSSH(m.Configs[m.ConfigCursor].SSHHost, m.Configs[m.ConfigCursor].SSHPort, m.Configs[m.ConfigCursor].SSHUser, m.Configs[m.ConfigCursor].SSHPass, m.Configs[m.ConfigCursor].SSHKey, netType)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
+	return netType, nil
+}
+
+func (m *Model) InitConnection(cfg config.Config, netType string) error {
 
 	db, err := database.GetDatabase(cfg.Host, cfg.Port, cfg.User, cfg.Pass, netType, "", cfg.Charset)
 	if err != nil {

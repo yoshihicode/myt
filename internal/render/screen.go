@@ -149,6 +149,35 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 	return s.String()
 }
 
+func PasswordPrompt(target string, inputView string, errorMsg string) string {
+
+	var s MyStringBuilder
+
+	if errorMsg != "" {
+		s.WriteStrings(lipgloss.NewStyle().Foreground(dangerColor).Render("Error: "+errorMsg), "\n\n")
+	}
+
+	title := "🔐 MySQL Password Required"
+	if target == "SSH" {
+		title = "🔑 SSH Password Required"
+	}
+
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Bold(true).Render(title),
+		"",
+		inputView,
+		"",
+		lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(" [Enter] Submit | [Esc] Cancel"),
+	)
+
+	s.WriteStrings(content)
+
+	return lipgloss.NewStyle().
+		Width(72).
+		Padding(1, 2).
+		Render(s.String())
+}
+
 func SchemaPanel(isFocused bool, schemaPane int, databases []string, tables []string, columns []string, dbCursor int, tblCursor int, colCursor int) string {
 	schemaBorderColor := inactiveColor
 	if isFocused {

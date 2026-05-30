@@ -31,6 +31,10 @@ func (m *Model) View() string {
 		return render.Config(m.Configs, m.ConfigCursor, m.ErrorMsg)
 	}
 
+	if m.State == PasswordPrompt {
+		return render.PasswordPrompt(m.PromptTarget, m.PasswordInput.View(), m.ErrorMsg)
+	}
+
 	if m.ShowHelp {
 		return render.Help()
 	}

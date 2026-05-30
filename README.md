@@ -70,13 +70,13 @@ myt -conf myt.yaml
 | host | string | MySQL server host address. |||
 | port | int | MySQL server port number.| 3306 ||
 | user | string | MySQL username. |||
-| password | string | MySQL password. || Leave empty if no password. |
+| password | string | MySQL password. || Leave empty to enter password securely via TUI. |
 | charset| string | Character set for the MySQL connection. | utf8mb4 ||
 | tee | string | Output file path for query results (appended), mimicking the MySQL `tee` command. |||
 | ssh_host| string | SSH bastion host address for tunneling. |||
 | ssh_port| int | SSH bastion server port number. | 22 ||
 | ssh_user| string | SSH username for the bastion server. |||
-| ssh_password| string | SSH password for the bastion server. || Used if ssh_key is empty. |
+| ssh_password| string | SSH password for the bastion server. || Leave empty to enter password securely via TUI. Used if ssh_key is empty. |
 | ssh_key| string | Path to your SSH private key. || e.g. /home/user/.ssh/id_rsa |
 | read_write| bool | Enable read-write mode  | false | Allows DML with autocommit=0 |
 

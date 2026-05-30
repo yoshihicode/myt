@@ -11,6 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -18,15 +19,86 @@ import (
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
+	if m.State == PasswordPrompt {
+		m.PasswordInput, cmd = m.PasswordInput.Update(msg)
+
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			if msg.String() == "ctrl+c" {
+				m.Close()
+				return m, tea.Quit
+			}
+			switch msg.Type {
+			case tea.KeyEnter:
+				m.ErrorMsg = ""
+				v := m.PasswordInput.Value()
+
+				switch m.PromptTarget {
+				case "SSH":
+					m.Configs[m.ConfigCursor].SSHPass = v
+
+					if m.Configs[m.ConfigCursor].Pass == "" {
+						m.SetPasswordSubmit("DB")
+						return m, textinput.Blink
+					}
+
+					netType, err := m.GetNetType()
+					if err != nil {
+						m.ErrorMsg = err.Error()
+						m.Configs[m.ConfigCursor].SSHPass = ""
+						m.SetPasswordSubmit("SSH")
+						return m, textinput.Blink
+					}
+					err = m.InitConnection(m.Configs[m.ConfigCursor], netType)
+					if err != nil {
+						m.ErrorMsg = err.Error()
+						m.Configs[m.ConfigCursor].Pass = ""
+						m.SetPasswordSubmit("DB")
+						return m, textinput.Blink
+					} else {
+						m.ErrorMsg = ""
+						m.State = Main
+					}
+					return m, nil
+				case "DB":
+					m.Configs[m.ConfigCursor].Pass = v
+					netType, err := m.GetNetType()
+					if err != nil {
+						m.ErrorMsg = err.Error()
+						m.Configs[m.ConfigCursor].SSHPass = ""
+						m.Configs[m.ConfigCursor].Pass = ""
+						m.SetPasswordSubmit("SSH")
+						return m, textinput.Blink
+					}
+					err = m.InitConnection(m.Configs[m.ConfigCursor], netType)
+					if err != nil {
+						m.ErrorMsg = err.Error()
+						m.Configs[m.ConfigCursor].Pass = ""
+						m.SetPasswordSubmit("DB")
+						return m, textinput.Blink
+					} else {
+						m.State = Main
+					}
+					return m, nil
+				}
+
+			case tea.KeyEsc, tea.KeyCtrlC:
+				if m.ConnectionSelect {
+					m.State = SelectConfig
+					m.ErrorMsg = ""
+					return m, nil
+				} else {
+					m.Close()
+					return m, tea.Quit
+				}
+			}
+		}
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
-			if m.Conn != nil {
-				m.Conn.Close()
-			}
-			if m.DB != nil {
-				m.DB.Close()
-			}
+			m.Close()
 			return m, tea.Quit
 		}
 
@@ -43,7 +115,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.ConfigCursor++
 				}
 			case "enter":
-				err := m.InitConnection(m.Configs[m.ConfigCursor])
+				// ssh password
+				if m.Configs[m.ConfigCursor].SSHUser != "" && m.Configs[m.ConfigCursor].SSHKey == "" && m.Configs[m.ConfigCursor].SSHPass == "" {
+					m.SetPasswordSubmit("SSH")
+					return m, textinput.Blink
+				}
+
+				// password
+				if m.Configs[m.ConfigCursor].Pass == "" {
+					m.SetPasswordSubmit("DB")
+					return m, textinput.Blink
+				}
+
+				netType, err := m.GetNetType()
+				if err != nil {
+					m.ErrorMsg = err.Error()
+					return m, nil
+				}
+				err = m.InitConnection(m.Configs[m.ConfigCursor], netType)
 				if err != nil {
 					m.ErrorMsg = err.Error()
 				} else {
