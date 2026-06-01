@@ -15,6 +15,9 @@ builds:
       - -X main.Revision={{.ShortCommit}}
     env:
       - CGO_ENABLED=0
+    hooks:
+      - cmd: upx "{{ .Path }}"
+        if: '{{ eq .Os "linux" }}'
     goos:
       - windows
       - darwin
