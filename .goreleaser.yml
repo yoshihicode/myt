@@ -18,7 +18,7 @@ builds:
     hooks:
       post:
         - cmd: upx "{{ .Path }}"
-          if: '{{ eq .Os "linux" }}'
+        - cmd: sh -c 'case "{{ .Target }}" in linux_*) upx "{{ .Path }}";; *) echo "Skipping UPX for {{ .Target }}";; esac'
     goos:
       - windows
       - darwin
