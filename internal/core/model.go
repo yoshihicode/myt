@@ -54,11 +54,7 @@ type Model struct {
 
 	SqlInput textarea.Model
 
-	DBUser string
-	DBPass string
-	DBHost string
-	DBPort int
-	DBNet  string
+	DBNet string
 
 	TabMatches  []string
 	TabMatchIdx int
@@ -162,10 +158,6 @@ func (m *Model) InitConnection(cfg config.Config, netType string) error {
 		return fmt.Errorf("Failed to list databases: %v", err)
 	}
 
-	m.DBUser = cfg.User
-	m.DBPass = cfg.Pass
-	m.DBHost = cfg.Host
-	m.DBPort = cfg.Port
 	m.DBNet = netType
 	m.Databases = databases
 
@@ -188,7 +180,9 @@ func (m *Model) Connect(cfg config.Config) {
 	dbName := m.Databases[m.DBCursor]
 	m.Close()
 
-	db, _ := database.GetDatabase(m.DBHost, m.DBPort, m.DBUser, m.DBPass, m.DBNet, dbName, cfg.Charset)
+	db, _ := database.GetDatabase(
+		m.Configs[m.ConfigCursor].Host, m.Configs[m.ConfigCursor].Port,
+		m.Configs[m.ConfigCursor].User, m.Configs[m.ConfigCursor].Pass, m.DBNet, dbName, cfg.Charset)
 	conn, _ := database.GetConnection(db, m.Configs[m.ConfigCursor].ReadWrite)
 	m.DB = db
 	m.Conn = conn
