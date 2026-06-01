@@ -15,10 +15,6 @@ builds:
       - -X main.Revision={{.ShortCommit}}
     env:
       - CGO_ENABLED=0
-    hooks:
-      post:
-        - cmd: upx "{{ .Path }}"
-        - cmd: '{{ if eq .Os "linux" }}upx "{{ .Path }}"{{ else }}echo "Skipping UPX for {{ .Os }}"{{ end }}'
     goos:
       - windows
       - darwin
