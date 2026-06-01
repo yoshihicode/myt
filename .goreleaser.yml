@@ -16,8 +16,9 @@ builds:
     env:
       - CGO_ENABLED=0
     hooks:
-      - cmd: upx "{{ .Path }}"
-        if: '{{ eq .Os "linux" }}'
+      post:
+        - cmd: upx "{{ .Path }}"
+          if: '{{ eq .Os "linux" }}'
     goos:
       - windows
       - darwin
