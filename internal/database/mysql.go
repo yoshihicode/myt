@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/ssh"
@@ -20,7 +22,7 @@ type QueryResult struct {
 func SetupSSH(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType string) error {
 	var authMethods []ssh.AuthMethod
 	if sshKey != "" {
-		keyData, err := os.ReadFile(sshKey)
+		keyData, err := os.ReadFile(expandHome(sshKey))
 		if err != nil {
 			return fmt.Errorf("Failed to load the SSH private key: %v", err)
 		}
@@ -163,4 +165,19 @@ func ExecuteQuery(ctx context.Context, conn *sql.Conn, query string) (*QueryResu
 		Columns: cols,
 		Rows:    results,
 	}, nil
+}
+
+func expandHome(path string) string {
+	if path == "" {
+		return ""
+	}
+
+	if strings.HasPrefix(path, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return path
+		}
+		return filepath.Join(home, path[2:])
+	}
+	return path
 }
