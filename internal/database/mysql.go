@@ -3,10 +3,11 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"errors"
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
@@ -24,11 +25,11 @@ func SetupSSH(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType str
 	if sshKey != "" {
 		keyData, err := os.ReadFile(expandHome(sshKey))
 		if err != nil {
-			return fmt.Errorf("Failed to load the SSH private key: %v", err)
+			return errors.New("Failed to load the SSH private key: " + err.Error())
 		}
 		signer, err := ssh.ParsePrivateKey(keyData)
 		if err != nil {
-			return fmt.Errorf("Failed to parse the SSH private key: %v", err)
+			return errors.New("Failed to parse the SSH private key: " + err.Error())
 		}
 		authMethods = append(authMethods, ssh.PublicKeys(signer))
 	}
@@ -46,7 +47,7 @@ func SetupSSH(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType str
 
 	}
 	if len(authMethods) == 0 {
-		return fmt.Errorf("SSH connection requires either a password or a private key")
+		return errors.New("SSH connection requires either a password or a private key")
 	}
 
 	sshConfig := &ssh.ClientConfig{
@@ -55,9 +56,9 @@ func SetupSSH(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType str
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", sshHost, sshPort), sshConfig)
+	sshClient, err := ssh.Dial("tcp", sshHost+":"+strconv.Itoa(sshPort), sshConfig)
 	if err != nil {
-		return fmt.Errorf("Failed to establish SSH connection to the bastion server: %v", err)
+		return errors.New("Failed to establish SSH connection to the bastion server: " + err.Error())
 	}
 
 	mysql.RegisterDialContext(netType, func(ctx context.Context, addr string) (net.Conn, error) {
@@ -85,7 +86,8 @@ func GetDatabases(db *sql.DB) ([]string, error) {
 }
 
 func GetDatabase(host string, port int, user, pass, netType string, dbName string, charset string) (*sql.DB, error) {
-	dns := fmt.Sprintf("%s:%s@%s(%s:%d)/%s?charset=%s", user, pass, netType, host, port, dbName, charset)
+	dns := user + ":" + pass + "@" + netType + "(" + host + ":" + strconv.Itoa(port) + ")/" + dbName + "?charset=" + charset
+
 	db, err := sql.Open("mysql", dns)
 	if err != nil {
 		if db != nil {

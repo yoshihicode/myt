@@ -2,7 +2,7 @@ package render
 
 import (
 	"encoding/json"
-	"fmt"
+	"strconv"
 	"strings"
 
 	"myt/internal/database"
@@ -56,7 +56,7 @@ func Format(res *database.QueryResult, format OutputFormat) string {
 				if row[col] == nil {
 					rowStrs = append(rowStrs, "")
 				} else {
-					rowStrs = append(rowStrs, fmt.Sprintf("\"%s\"", strings.ReplaceAll(str, "\"", "\"\"")))
+					rowStrs = append(rowStrs, "\""+strings.ReplaceAll(str, "\"", "\"\"")+"\"")
 				}
 			}
 			sb.WriteStrings(strings.Join(rowStrs, ","), "\n")
@@ -95,7 +95,8 @@ func Format(res *database.QueryResult, format OutputFormat) string {
 		sb.WriteStrings(sep, "\n|")
 		for i, col := range cols {
 			pad := colWidths[i] - lipgloss.Width(col)
-			sb.WriteString(fmt.Sprintf(" %s%s |", col, strings.Repeat(" ", pad)))
+			sb.WriteStrings(" ", col, strings.Repeat(" ", pad), " |")
+
 		}
 		sb.WriteStrings("\n", sep, "\n")
 
@@ -104,7 +105,7 @@ func Format(res *database.QueryResult, format OutputFormat) string {
 			for i, col := range cols {
 				str := getStringValue(row[col])
 				pad := colWidths[i] - lipgloss.Width(str)
-				sb.WriteString(fmt.Sprintf(" %s%s |", str, strings.Repeat(" ", pad)))
+				sb.WriteStrings(" ", str, strings.Repeat(" ", pad), " |")
 			}
 			sb.WriteString("\n")
 		}
@@ -120,5 +121,23 @@ func getStringValue(v interface{}) string {
 	if v == nil {
 		return "NULL"
 	}
-	return strings.ReplaceAll(fmt.Sprintf("%v", v), "\n", " ")
+	var res string
+	switch val := v.(type) {
+	case string:
+		res = val
+	case int64:
+		res = strconv.FormatInt(val, 10)
+	case float64:
+		res = strconv.FormatFloat(val, 'f', -1, 64)
+	case bool:
+		res = strconv.FormatBool(val)
+	default:
+		if stringer, ok := v.(interface{ String() string }); ok {
+			res = stringer.String()
+		} else {
+			res = ""
+		}
+	}
+
+	return strings.ReplaceAll(res, "\n", " ")
 }

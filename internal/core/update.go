@@ -2,11 +2,11 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"myt/internal/database"
 	"myt/internal/render"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -431,7 +431,7 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 			}
 		}
 		nowStr := time.Now().Format("2006-01-02 15:04:05.000")
-		header := lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render(fmt.Sprintf("--- Result [%s]: [%d] %s ---", nowStr, cnt, query))
+		header := lipgloss.NewStyle().Foreground(lipgloss.Color("36")).Render("--- Result [" + nowStr + "]: [" + strconv.Itoa(cnt) + "] " + query + " ---")
 		output.WriteStrings("\n", header, "\n")
 
 		if !isAllowed {
@@ -441,7 +441,7 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 
 		res, err := database.ExecuteQuery(context.Background(), m.Conn, query)
 		if err != nil {
-			output.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: %v\n", err)))
+			output.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Error: " + err.Error() + "\n"))
 			continue
 		}
 		if isAllowed {
@@ -472,12 +472,12 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 	if m.Configs[m.ConfigCursor].Tee != "" {
 		f, err := os.OpenFile(m.Configs[m.ConfigCursor].Tee, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
-			return tea.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: Failed to open output file: %v", err)))
+			return tea.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Error: Failed to open output file: " + err.Error()))
 		}
 		defer f.Close()
 
 		if _, err := f.WriteString(ansiRegex.ReplaceAllString(output.String(), "")); err != nil {
-			return tea.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: Failed to write to file: %v", err)))
+			return tea.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Error: Failed to write to file: " + err.Error()))
 		}
 	}
 

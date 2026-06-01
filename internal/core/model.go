@@ -2,7 +2,7 @@ package core
 
 import (
 	"database/sql"
-	"fmt"
+	"errors"
 	"myt/internal/config"
 	"myt/internal/database"
 	"sort"
@@ -133,7 +133,7 @@ func (m *Model) GetNetType() (string, error) {
 	netType := "tcp"
 	if m.Configs[m.ConfigCursor].SSHHost != "" {
 		// Generate a unique identifier for each SSH connection
-		netType = fmt.Sprintf("mysql+tcp+%s", m.Configs[m.ConfigCursor].Name)
+		netType = "mysql+tcp+" + m.Configs[m.ConfigCursor].Name
 
 		err := database.SetupSSH(m.Configs[m.ConfigCursor].SSHHost, m.Configs[m.ConfigCursor].SSHPort, m.Configs[m.ConfigCursor].SSHUser, m.Configs[m.ConfigCursor].SSHPass, m.Configs[m.ConfigCursor].SSHKey, netType)
 		if err != nil {
@@ -150,12 +150,13 @@ func (m *Model) InitConnection(cfg config.Config, netType string) error {
 		return err
 	}
 	if err := db.Ping(); err != nil {
-		return fmt.Errorf("DB connection failed: %v", err)
+		return errors.New("DB connection failed: " + err.Error())
+
 	}
 
 	databases, err := database.GetDatabases(db)
 	if err != nil {
-		return fmt.Errorf("Failed to list databases: %v", err)
+		return errors.New("Failed to list databases: " + err.Error())
 	}
 
 	m.DBNet = netType
@@ -206,7 +207,7 @@ func (m *Model) LoadMetadata(dbName string) {
 	m.Tables = nil
 	var columns []string
 
-	query := fmt.Sprintf("SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '%s'", dbName)
+	query := "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" + dbName + "'"
 	rows, err := m.DB.Query(query)
 	if err == nil {
 		defer rows.Close()

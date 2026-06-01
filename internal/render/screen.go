@@ -1,8 +1,8 @@
 package render
 
 import (
-	"fmt"
 	"myt/internal/config"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -65,7 +65,7 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 
 	var rows []rowData
 	for _, cfg := range configs {
-		endpoint := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+		endpoint := cfg.Host + ":" + strconv.Itoa(cfg.Port)
 
 		mode := "[Read Only]"
 		if cfg.ReadWrite {
@@ -212,7 +212,7 @@ func SchemaPanel(isFocused bool, schemaPane int, databases []string, tables []st
 				}
 			}
 			safeName := truncateText(databases[idx], maxNameLen)
-			dStr.WriteString(fmt.Sprintf("%s%s\n", cursor, safeName))
+			dStr.WriteStrings(cursor, safeName, "\n")
 		} else {
 			dStr.WriteString("\n")
 		}
@@ -242,7 +242,7 @@ func SchemaPanel(isFocused bool, schemaPane int, databases []string, tables []st
 				}
 			}
 			safeName := truncateText(tables[idx], maxNameLen)
-			tStr.WriteString(fmt.Sprintf("%s%s\n", cursor, safeName))
+			tStr.WriteStrings(cursor, safeName, "\n")
 		} else {
 			tStr.WriteString("\n")
 		}
@@ -272,7 +272,7 @@ func SchemaPanel(isFocused bool, schemaPane int, databases []string, tables []st
 				}
 			}
 			safeName := truncateText(columns[idx], maxNameLen)
-			cStr.WriteString(fmt.Sprintf("%s%s\n", cursor, safeName))
+			cStr.WriteStrings(cursor, safeName, "\n")
 		} else {
 			cStr.WriteString("\n")
 		}
