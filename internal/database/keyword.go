@@ -1,5 +1,7 @@
 package database
 
+import "sort"
+
 var KEYWORDS = []string{
 	"ACCOUNT",
 	"ACTION",
@@ -684,4 +686,8 @@ var KEYWORDS = []string{
 	"YEAR",
 	"YEAR_MONTH",
 	"ZEROFILL",
+}
+
+func init() {
+	sort.Strings(KEYWORDS)
 }

@@ -237,10 +237,6 @@ func (m *Model) LoadMetadata(dbName string) {
 	sort.Strings(m.Tables)
 	sort.Strings(columns)
 
-	keywords := make([]string, len(database.KEYWORDS))
-	copy(keywords, database.KEYWORDS)
-	sort.Strings(keywords)
-
 	var newDict []string
 	existAll := make(map[string]bool)
 
@@ -258,7 +254,7 @@ func (m *Model) LoadMetadata(dbName string) {
 		}
 	}
 
-	for _, kw := range keywords {
+	for _, kw := range database.KEYWORDS {
 		if !existAll[kw] {
 			existAll[kw] = true
 			newDict = append(newDict, kw)
