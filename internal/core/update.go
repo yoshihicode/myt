@@ -413,7 +413,7 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 	cnt := 0
 
 	for _, q := range queries {
-		query := strings.TrimSpace(q)
+		query := cleanQuery(q)
 		if query == "" {
 			continue
 		}
@@ -452,7 +452,12 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 				m.TxPending = true
 			}
 
-			if strings.HasPrefix(qUpper, "COMMIT") || strings.HasPrefix(qUpper, "ROLLBACK") {
+			if strings.HasPrefix(qUpper, "COMMIT") ||
+				strings.HasPrefix(qUpper, "ROLLBACK") ||
+				strings.HasPrefix(qUpper, "CREATE") || // Implicit Commit
+				strings.HasPrefix(qUpper, "DROP") || // Implicit Commit
+				strings.HasPrefix(qUpper, "ALTER") || // Implicit Commit
+				strings.HasPrefix(qUpper, "TRUNCATE") { // Implicit Commit
 				m.TxPending = false
 			}
 		}
@@ -487,4 +492,15 @@ func (m *Model) ExecuteSQL() tea.Cmd {
 	return tea.Sequence(cmds...)
 }
 
-var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+var (
+	ansiRegex         = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+	blockCommentRegex = regexp.MustCompile(`(?s)/\*[^*]*\*+(?:[^/*][^*]*\*+)*/`)
+	lineCommentRegex  = regexp.MustCompile(`(?m)(?:--|#).*$`)
+)
+
+func cleanQuery(q string) string {
+	q = blockCommentRegex.ReplaceAllString(q, "")
+	q = lineCommentRegex.ReplaceAllString(q, "")
+
+	return strings.TrimSpace(q)
+}
