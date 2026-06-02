@@ -207,8 +207,8 @@ func (m *Model) LoadMetadata(dbName string) {
 	m.Tables = nil
 	var columns []string
 
-	query := "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" + dbName + "'"
-	rows, err := m.DB.Query(query)
+	query := "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ?"
+	rows, err := m.DB.Query(query, dbName)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
