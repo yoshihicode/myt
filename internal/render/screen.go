@@ -48,7 +48,7 @@ func Help() string {
 
 func Config(configs []config.Config, configCursor int, errorMsg string) string {
 	var s MyStringBuilder
-	s.WriteStrings(lipgloss.NewStyle().Foreground(highlightColor).Bold(true).Render("=== Select Connection ==="), "\n\n")
+	s.WriteStrings("\n", lipgloss.NewStyle().Foreground(highlightColor).Bold(true).Render(" Select Connection"), "\n\n")
 
 	if errorMsg != "" {
 		s.WriteStrings(lipgloss.NewStyle().Foreground(dangerColor).Render("Error: "+errorMsg), "\n\n")
@@ -85,10 +85,10 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 			maxEndpoint = lipgloss.Width(endpoint)
 		}
 
-		rows = append(rows, rowData{cfg.Name, endpoint, mode, network})
+		rows = append(rows, rowData{truncateText(cfg.Name, 28), endpoint, mode, network})
 	}
 
-	nameStyle := lipgloss.NewStyle().Width(maxName + 2)
+	nameStyle := lipgloss.NewStyle().Width(30)
 	endpointStyle := lipgloss.NewStyle().Width(maxEndpoint + 2)
 	modeStyle := lipgloss.NewStyle().Width(14)
 
@@ -102,7 +102,7 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 		"\n",
 	)
 
-	total := 3 + (maxName + 2) + (maxEndpoint + 2) + 14 + 7
+	total := 33 + (maxEndpoint + 2) + 14 + 7
 	s.WriteStrings(" "+lipgloss.NewStyle().Foreground(inactiveColor).Render(strings.Repeat("─", total)), "\n")
 
 	for i, r := range rows {
@@ -207,7 +207,7 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 			lineText = truncateText(databases[idx], 18)
 		}
 
-		formattedLine := padLine(lineText, isSelected, 20)
+		formattedLine := padRight(lineText, isSelected, 20)
 
 		if isSelected && focusPanel == constant.FocusDB {
 			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
@@ -239,7 +239,7 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 			lineText = truncateText(tables[idx], 20)
 		}
 
-		formattedLine := padLine(lineText, isSelected, 22)
+		formattedLine := padRight(lineText, isSelected, 22)
 
 		if isSelected && constant.FocusTable == focusPanel {
 			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
@@ -271,7 +271,7 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 			lineText = truncateText(columns[idx], 18)
 		}
 
-		formattedLine := padLine(lineText, isSelected, 20)
+		formattedLine := padRight(lineText, isSelected, 20)
 
 		if isSelected && focusPanel == constant.FocusColumn {
 			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
@@ -288,7 +288,7 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 	return lipgloss.JoinHorizontal(lipgloss.Top, leftPane, middlePane, rightPane)
 }
 
-func padLine(text string, isSelected bool, targetLen int) string {
+func padRight(text string, isSelected bool, targetLen int) string {
 	prefix := "  "
 	if isSelected {
 		prefix = "> "
@@ -341,17 +341,16 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 	}
 	formatBar := lipgloss.JoinHorizontal(lipgloss.Top, formats...)
 
-	modeStr := lipgloss.NewStyle().Foreground(safeColor).Render("Read Only")
+	modeStr := lipgloss.NewStyle().Foreground(safeColor).Render("[Read Only] ")
 	if rw {
-		modeStr = lipgloss.NewStyle().Foreground(dangerColor).Bold(true).Render("Read-Write")
+		modeStr = lipgloss.NewStyle().Foreground(dangerColor).Bold(true).Render("[Read-Write] ")
 	}
 
-	envInfo := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Bold(true).Render("Env : " + connName)
+	envInfo := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Bold(true).Render(modeStr + truncateText(connName, 22))
 
 	metaInfo := lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render("Mode: "),
-		modeStr,
-		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render("  Format: "),
+		envInfo,
+		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render(" | Format: "),
 		formatBar,
 	)
 
@@ -362,9 +361,9 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 			Bold(true).
 			Render("⚠️ Uncommitted changes! Please run COMMIT or ROLLBACK.")
 
-		statusBar = lipgloss.JoinVertical(lipgloss.Left, envInfo, metaInfo, txAlert)
+		statusBar = lipgloss.JoinVertical(lipgloss.Left, metaInfo, txAlert)
 	} else {
-		statusBar = lipgloss.JoinVertical(lipgloss.Left, envInfo, metaInfo)
+		statusBar = lipgloss.JoinVertical(lipgloss.Left, metaInfo)
 	}
 
 	sqlContent := lipgloss.JoinVertical(lipgloss.Left, text, "", statusBar)
