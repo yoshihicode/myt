@@ -140,17 +140,17 @@ Usage of myt:
 ### Global Shortcuts
 | Key | Action |
 | --- | --- |
-| Tab | Switch panel focus between Schema Panel and SQL Input Panel |
+| Tab | Focus next panel |
+| Shift + Tab | Focus previous Panel |
 | Ctrl+L | Clear terminal result screen |
 | Ctrl+R | Reload metadata/schema from the current database |
 | Ctrl+C | Exit Application |
 | Ctrl+H | Toggle Help window |
 | Esc | Disconnect and return to the connection selection page (only when started with a configuration file) |
 
-### Schema Panel
+### Schema Panels
 | Key | Action |
 | --- | --- |
-| ← / → | Switch schema focus (Database ➔ Table ➔ Column) |
 |↑ / ↓ | Move the panel cursor up and down |
 |Enter | Select item / Insert the highlighted name directly into the SQL editor |
 
