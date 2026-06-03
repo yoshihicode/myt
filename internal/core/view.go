@@ -1,6 +1,7 @@
 package core
 
 import (
+	"myt/internal/constant"
 	"myt/internal/render"
 
 	"github.com/charmbracelet/lipgloss"
@@ -9,22 +10,22 @@ import (
 func (m *Model) View() string {
 	var s render.MyStringBuilder
 
-	if m.State == SelectConfig {
+	if m.State == constant.AppStateConfig {
 		return render.Config(m.Configs, m.ConfigCursor, m.ErrorMsg)
 	}
 
-	if m.State == PasswordPrompt {
-		return render.PasswordPrompt(m.PromptTarget, m.PasswordInput.View(), m.ErrorMsg)
+	if m.State == constant.AppStatePassword {
+		return render.PasswordPrompt(m.PromptTarget, m.PasswordInput.View(), m.ErrorMsg, m.Configs[m.ConfigCursor].Name)
 	}
 
 	if m.ShowHelp {
 		return render.Help()
 	}
 
-	schema := render.SchemaPanel(!m.FocusSQL, m.SchemaPane, m.Databases, m.Tables, m.Columns, m.DBCursor, m.TableCursor, m.ColumnCursor)
+	schema := render.SchemaPanel(m.FocusPanel, m.Databases, m.Tables, m.Columns, m.DBCursor, m.TableCursor, m.ColumnCursor)
 	s.WriteStrings(schema, "\n")
 
-	query := render.QueryPanel(m.FocusSQL, m.OutputFormat, m.SqlInput.View(), m.Configs[m.ConfigCursor].ReadWrite, m.TxPending)
+	query := render.QueryPanel(m.FocusPanel == constant.FocusEditor, m.OutputFormat, m.SqlInput.View(), m.Configs[m.ConfigCursor].ReadWrite, m.TxPending, m.Configs[m.ConfigCursor].Name)
 
 	s.WriteStrings(query, "\n")
 	s.WriteStrings(lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render(" [Ctrl+H] Help | [Tab] Switch Panel | [Ctrl+E] Run Query"), "\n")

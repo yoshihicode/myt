@@ -2,6 +2,7 @@ package render
 
 import (
 	"myt/internal/config"
+	"myt/internal/constant"
 	"strconv"
 	"strings"
 
@@ -109,7 +110,7 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 		var rowStyle lipgloss.Style
 
 		if configCursor == i {
-			cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("▶ ")
+			cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("> ")
 			rowStyle = lipgloss.NewStyle().Foreground(highlightColor).Bold(true)
 		} else {
 			rowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
@@ -149,7 +150,7 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 	return s.String()
 }
 
-func PasswordPrompt(target string, inputView string, errorMsg string) string {
+func PasswordPrompt(target string, inputView string, errorMsg string, conName string) string {
 
 	var s MyStringBuilder
 
@@ -157,137 +158,152 @@ func PasswordPrompt(target string, inputView string, errorMsg string) string {
 		s.WriteStrings(lipgloss.NewStyle().Foreground(dangerColor).Render("Error: "+errorMsg), "\n\n")
 	}
 
-	title := "🔐 MySQL Password Required"
+	label := "🔐 MySQL Password Required"
 	if target == "SSH" {
-		title = "🔑 SSH Password Required"
+		label = "🔑 SSH Password Required"
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left,
-		lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Bold(true).Render(title),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true).Render(conName),
+		"",
+		lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Bold(true).Render(label),
 		"",
 		inputView,
 		"",
-		lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(" [Enter] Submit | [Esc] Cancel"),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(" [Enter] Submit | [Esc] Cancel | [Ctrl+C] Quit"),
 	)
 
-	s.WriteStrings(content)
+	s.WriteString(content)
 
 	return lipgloss.NewStyle().
-		Width(72).
-		Padding(1, 2).
-		Render(s.String())
+		Render(lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("240")).Padding(1, 3).Width(72).Render(s.String()))
+
 }
 
-func SchemaPanel(isFocused bool, schemaPane int, databases []string, tables []string, columns []string, dbCursor int, tblCursor int, colCursor int) string {
+func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string, columns []string, dbCursor int, tblCursor int, colCursor int) string {
 	schemaBorderColor := inactiveColor
-	if isFocused {
+	if focusPanel == constant.FocusDB {
 		schemaBorderColor = highlightColor
 	}
+	borderStyle := lipgloss.NewStyle().Foreground(schemaBorderColor)
 
 	var dStr, tStr, cStr MyStringBuilder
 
-	const maxNameLen = 18
+	// Databases
+	dStr.WriteStrings(borderStyle.Render("┌─ Databases ─"+strings.Repeat("─", 9)+"┐"), "\n")
 
-	// [1. Databases]
 	startD := dbCursor - 2
 	if startD < 0 {
 		startD = 0
 	}
-	dTitle := "--- Databases ---"
-	if isFocused && schemaPane == 0 {
-		dTitle = lipgloss.NewStyle().Foreground(highlightColor).Bold(true).Render("> " + dTitle)
-	} else {
-		dTitle = "  " + dTitle
-	}
-	dStr.WriteStrings(dTitle, "\n")
 	for i := 0; i < 5; i++ {
 		idx := startD + i
-		if idx < len(databases) {
-			cursor := "  "
-			if dbCursor == idx {
-				if isFocused && schemaPane == 0 {
-					cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("> ")
-				} else {
-					cursor = "> "
-				}
-			}
-			safeName := truncateText(databases[idx], maxNameLen)
-			dStr.WriteStrings(cursor, safeName, "\n")
-		} else {
-			dStr.WriteString("\n")
-		}
-	}
+		lineText := ""
+		isSelected := false
 
-	// [2. Tables]
+		if idx < len(databases) {
+			isSelected = (dbCursor == idx)
+			lineText = truncateText(databases[idx], 18)
+		}
+
+		formattedLine := padLine(lineText, isSelected, 20)
+
+		if isSelected && focusPanel == constant.FocusDB {
+			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
+		}
+
+		dStr.WriteStrings(borderStyle.Render("│")+formattedLine+borderStyle.Render("│"), "\n")
+	}
+	dStr.WriteString(borderStyle.Render("└" + strings.Repeat("─", 22) + "┘"))
+
+	// Tables
+	schemaBorderColor = inactiveColor
+	if focusPanel == constant.FocusTable {
+		schemaBorderColor = highlightColor
+	}
+	borderStyle = lipgloss.NewStyle().Foreground(schemaBorderColor)
+	tStr.WriteStrings(borderStyle.Render("┌─ Tables ─"+strings.Repeat("─", 14)+"┐"), "\n")
+
 	startT := tblCursor - 2
 	if startT < 0 {
 		startT = 0
 	}
-	tTitle := "--- Tables ---"
-	if isFocused && schemaPane == 1 {
-		tTitle = lipgloss.NewStyle().Foreground(highlightColor).Bold(true).Render("> " + tTitle)
-	} else {
-		tTitle = "  " + tTitle
-	}
-	tStr.WriteStrings(tTitle, "\n")
 	for i := 0; i < 5; i++ {
 		idx := startT + i
-		if idx < len(tables) {
-			cursor := "  "
-			if tblCursor == idx {
-				if isFocused && schemaPane == 1 {
-					cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("> ")
-				} else {
-					cursor = "> "
-				}
-			}
-			safeName := truncateText(tables[idx], maxNameLen)
-			tStr.WriteStrings(cursor, safeName, "\n")
-		} else {
-			tStr.WriteString("\n")
-		}
-	}
+		lineText := ""
+		isSelected := false
 
-	// [3. Columns]
+		if idx < len(tables) {
+			isSelected = (tblCursor == idx)
+			lineText = truncateText(tables[idx], 20)
+		}
+
+		formattedLine := padLine(lineText, isSelected, 22)
+
+		if isSelected && constant.FocusTable == focusPanel {
+			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
+		}
+
+		tStr.WriteStrings(borderStyle.Render("│")+formattedLine+borderStyle.Render("│"), "\n")
+	}
+	tStr.WriteString(borderStyle.Render("└" + strings.Repeat("─", 24) + "┘"))
+
+	// Columns
+	schemaBorderColor = inactiveColor
+	if focusPanel == constant.FocusColumn {
+		schemaBorderColor = highlightColor
+	}
+	borderStyle = lipgloss.NewStyle().Foreground(schemaBorderColor)
+	cStr.WriteStrings(borderStyle.Render("┌─ Columns ─"+strings.Repeat("─", 11)+"┐"), "\n")
+
 	startC := colCursor - 2
 	if startC < 0 {
 		startC = 0
 	}
-	cTitle := "--- Columns ---"
-	if isFocused && schemaPane == 2 {
-		cTitle = lipgloss.NewStyle().Foreground(highlightColor).Bold(true).Render("> " + cTitle)
-	} else {
-		cTitle = "  " + cTitle
-	}
-	cStr.WriteStrings(cTitle, "\n")
 	for i := 0; i < 5; i++ {
 		idx := startC + i
+		lineText := ""
+		isSelected := false
+
 		if idx < len(columns) {
-			cursor := "  "
-			if colCursor == idx {
-				if isFocused && schemaPane == 2 {
-					cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("> ")
-				} else {
-					cursor = "> "
-				}
-			}
-			safeName := truncateText(columns[idx], maxNameLen)
-			cStr.WriteStrings(cursor, safeName, "\n")
-		} else {
-			cStr.WriteString("\n")
+			isSelected = (colCursor == idx)
+			lineText = truncateText(columns[idx], 18)
 		}
+
+		formattedLine := padLine(lineText, isSelected, 20)
+
+		if isSelected && focusPanel == constant.FocusColumn {
+			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
+		}
+
+		cStr.WriteStrings(borderStyle.Render("│")+formattedLine+borderStyle.Render("│"), "\n")
+	}
+	cStr.WriteString(borderStyle.Render("└" + strings.Repeat("─", 22) + "┘"))
+
+	leftPane := dStr.String()
+	middlePane := tStr.String()
+	rightPane := cStr.String()
+
+	return lipgloss.JoinHorizontal(lipgloss.Top, leftPane, middlePane, rightPane)
+}
+
+func padLine(text string, isSelected bool, targetLen int) string {
+	prefix := "  "
+	if isSelected {
+		prefix = "> "
 	}
 
-	leftPane := lipgloss.NewStyle().Width(23).Render(dStr.String())
-	middlePane := lipgloss.NewStyle().Width(23).Border(lipgloss.NormalBorder(), false, false, false, true).PaddingLeft(1).Render(tStr.String())
-	rightPane := lipgloss.NewStyle().Width(24).Border(lipgloss.NormalBorder(), false, false, false, true).PaddingLeft(1).Render(cStr.String())
-	schemaContent := lipgloss.JoinHorizontal(lipgloss.Top, leftPane, middlePane, rightPane)
+	fullText := prefix + text
 
-	return lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), true).
-		BorderForeground(schemaBorderColor).
-		Width(72).
-		Render(schemaContent)
+	currentLen := len([]rune(fullText))
+
+	padLen := targetLen - currentLen
+	if padLen < 0 {
+		padLen = 0
+	}
+
+	return " " + fullText + strings.Repeat(" ", padLen) + " "
 }
 
 func truncateText(name string, maxWidth int) string {
@@ -307,7 +323,7 @@ func truncateText(name string, maxWidth int) string {
 	return sb.String() + ".."
 }
 
-func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPending bool) string {
+func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPending bool, connName string) string {
 	sqlBorderColor := inactiveColor
 	if isFocused {
 		sqlBorderColor = highlightColor
@@ -325,14 +341,17 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 	}
 	formatBar := lipgloss.JoinHorizontal(lipgloss.Top, formats...)
 
-	modeStr := lipgloss.NewStyle().Foreground(safeColor).Render("[Read Only]")
+	modeStr := lipgloss.NewStyle().Foreground(safeColor).Render("Read Only")
 	if rw {
-		modeStr = lipgloss.NewStyle().Foreground(dangerColor).Bold(true).Render("[Read-Write]")
+		modeStr = lipgloss.NewStyle().Foreground(dangerColor).Bold(true).Render("Read-Write")
 	}
+
+	envInfo := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Bold(true).Render("Env : " + connName)
+
 	metaInfo := lipgloss.JoinHorizontal(lipgloss.Top,
 		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render("Mode: "),
 		modeStr,
-		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render("  |  Format: "),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render("  Format: "),
 		formatBar,
 	)
 
@@ -343,9 +362,9 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 			Bold(true).
 			Render("⚠️ Uncommitted changes! Please run COMMIT or ROLLBACK.")
 
-		statusBar = lipgloss.JoinVertical(lipgloss.Left, metaInfo, txAlert)
+		statusBar = lipgloss.JoinVertical(lipgloss.Left, envInfo, metaInfo, txAlert)
 	} else {
-		statusBar = metaInfo
+		statusBar = lipgloss.JoinVertical(lipgloss.Left, envInfo, metaInfo)
 	}
 
 	sqlContent := lipgloss.JoinVertical(lipgloss.Left, text, "", statusBar)

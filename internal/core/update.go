@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"myt/internal/constant"
 	"myt/internal/database"
 	"myt/internal/render"
 	"os"
@@ -19,29 +20,67 @@ import (
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	if m.State == PasswordPrompt {
-		m.PasswordInput, cmd = m.PasswordInput.Update(msg)
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
 
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			if msg.String() == "ctrl+c" {
-				m.Close()
+		if msg.String() == "ctrl+c" {
+			m.Close()
+			return m, tea.Quit
+		}
+
+		if m.State == constant.AppStateConfig {
+			switch msg.String() {
+			case "q", "esc":
 				return m, tea.Quit
+			case "up", "j":
+				if m.ConfigCursor > 0 {
+					m.ConfigCursor--
+				}
+			case "down", "k":
+				if m.ConfigCursor < len(m.Configs)-1 {
+					m.ConfigCursor++
+				}
+			case "enter":
+				if m.Configs[m.ConfigCursor].SSHUser != "" && m.Configs[m.ConfigCursor].SSHKey == "" && m.Configs[m.ConfigCursor].SSHPass == "" {
+					m.SetPasswordSubmit("SSH")
+					return m, textinput.Blink
+				}
+
+				if m.Configs[m.ConfigCursor].Pass == "" {
+					m.SetPasswordSubmit("DB")
+					return m, textinput.Blink
+				}
+
+				netType, err := m.GetNetType()
+				if err != nil {
+					m.ErrorMsg = err.Error()
+					return m, nil
+				}
+				err = m.InitConnection(m.Configs[m.ConfigCursor], netType)
+				if err != nil {
+					m.ErrorMsg = err.Error()
+				} else {
+					m.State = constant.AppStateMain
+				}
 			}
-			switch msg.Type {
-			case tea.KeyEnter:
+			return m, nil
+		}
+
+		if m.State == constant.AppStatePassword {
+			m.PasswordInput, cmd = m.PasswordInput.Update(msg)
+
+			switch msg.String() {
+			case "enter":
 				m.ErrorMsg = ""
 				v := m.PasswordInput.Value()
 
 				switch m.PromptTarget {
 				case "SSH":
 					m.Configs[m.ConfigCursor].SSHPass = v
-
 					if m.Configs[m.ConfigCursor].Pass == "" {
 						m.SetPasswordSubmit("DB")
 						return m, textinput.Blink
 					}
-
 					netType, err := m.GetNetType()
 					if err != nil {
 						m.ErrorMsg = err.Error()
@@ -57,9 +96,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, textinput.Blink
 					} else {
 						m.ErrorMsg = ""
-						m.State = Main
+						m.State = constant.AppStateMain
 					}
 					return m, nil
+
 				case "DB":
 					m.Configs[m.ConfigCursor].Pass = v
 					netType, err := m.GetNetType()
@@ -77,14 +117,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.SetPasswordSubmit("DB")
 						return m, textinput.Blink
 					} else {
-						m.State = Main
+						m.State = constant.AppStateMain
 					}
 					return m, nil
 				}
 
-			case tea.KeyEsc, tea.KeyCtrlC:
+			case "esc":
 				if m.ConnectionSelect {
-					m.State = SelectConfig
+					m.State = constant.AppStateConfig
 					m.ErrorMsg = ""
 					return m, nil
 				} else {
@@ -92,54 +132,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Quit
 				}
 			}
-		}
-	}
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
-			m.Close()
-			return m, tea.Quit
-		}
-
-		if m.State == SelectConfig {
-			switch msg.String() {
-			case "q", "esc", "ctrl+c":
-				return m, tea.Quit
-			case "up", "j":
-				if m.ConfigCursor > 0 {
-					m.ConfigCursor--
-				}
-			case "down", "k":
-				if m.ConfigCursor < len(m.Configs)-1 {
-					m.ConfigCursor++
-				}
-			case "enter":
-				// ssh password
-				if m.Configs[m.ConfigCursor].SSHUser != "" && m.Configs[m.ConfigCursor].SSHKey == "" && m.Configs[m.ConfigCursor].SSHPass == "" {
-					m.SetPasswordSubmit("SSH")
-					return m, textinput.Blink
-				}
-
-				// password
-				if m.Configs[m.ConfigCursor].Pass == "" {
-					m.SetPasswordSubmit("DB")
-					return m, textinput.Blink
-				}
-
-				netType, err := m.GetNetType()
-				if err != nil {
-					m.ErrorMsg = err.Error()
-					return m, nil
-				}
-				err = m.InitConnection(m.Configs[m.ConfigCursor], netType)
-				if err != nil {
-					m.ErrorMsg = err.Error()
-				} else {
-					m.State = Main
-				}
-			}
-			return m, nil
+			return m, cmd
 		}
 
 		if msg.String() == "ctrl+l" {
@@ -152,15 +145,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
-
 		if msg.String() == "ctrl+h" {
 			m.ShowHelp = true
 			return m, nil
 		}
 
-		if msg.String() == "tab" || msg.String() == "shift+tab" {
-			m.FocusSQL = !m.FocusSQL
-			if m.FocusSQL {
+		if msg.String() == "tab" {
+			m.FocusPanel = (m.FocusPanel + 1) % 4
+			if m.FocusPanel == constant.FocusEditor {
+				m.SqlInput.Focus()
+			} else {
+				m.SqlInput.Blur()
+			}
+			return m, nil
+		}
+
+		if msg.String() == "shift+tab" {
+			m.FocusPanel = (m.FocusPanel - 1 + 4) % 4
+			if m.FocusPanel == constant.FocusEditor {
 				m.SqlInput.Focus()
 			} else {
 				m.SqlInput.Blur()
@@ -172,11 +174,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.OutputFormat = (m.OutputFormat + 1) % render.OutputFormat(len(render.FormatNames))
 			return m, nil
 		}
-
 		if msg.String() == "ctrl+e" {
 			return m, m.ExecuteSQL()
 		}
-
 		if msg.String() == "ctrl+u" {
 			m.SqlInput.SetValue("")
 			return m, nil
@@ -185,21 +185,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Connect(m.Configs[m.ConfigCursor])
 			return m, nil
 		}
-
 		if msg.String() == "esc" {
 			if m.ConnectionSelect {
 				m.Close()
 				m.DBCursor = 0
 				m.TableCursor = 0
 				m.ColumnCursor = 0
-				m.State = SelectConfig
-				m.FocusSQL = false
-				m.SchemaPane = 0
+				m.State = constant.AppStateConfig
+				m.FocusPanel = 0
 				m.ErrorMsg = ""
 				return m, nil
 			}
 		}
-		if m.FocusSQL {
+
+		if m.FocusPanel == constant.FocusEditor {
 			if msg.String() == "ctrl+space" || msg.String() == "ctrl+@" || msg.String() == "ctrl+n" {
 				m.Autocomplete()
 				return m, nil
@@ -209,55 +208,46 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		} else {
 			switch msg.String() {
-			case "left", "h":
-				if m.SchemaPane > 0 {
-					m.SchemaPane--
-				}
-			case "right", "l":
-				if m.SchemaPane == 0 && len(m.Tables) > 0 {
-					m.SchemaPane = 1
-				} else if m.SchemaPane == 1 && len(m.Columns) > 0 {
-					m.SchemaPane = 2
-				}
 			case "up", "j":
-				if m.SchemaPane == 0 && m.DBCursor > 0 {
+				if m.FocusPanel == constant.FocusDB && m.DBCursor > 0 {
 					m.DBCursor--
 					m.Connect(m.Configs[m.ConfigCursor])
-				} else if m.SchemaPane == 1 && m.TableCursor > 0 {
+				} else if m.FocusPanel == constant.FocusTable && m.TableCursor > 0 {
 					m.TableCursor--
 					m.UpdateColumns()
-				} else if m.SchemaPane == 2 && m.ColumnCursor > 0 {
+				} else if m.FocusPanel == constant.FocusColumn && m.ColumnCursor > 0 {
 					m.ColumnCursor--
 				}
 			case "down", "k":
-				if m.SchemaPane == 0 && m.DBCursor < len(m.Databases)-1 {
+				if m.FocusPanel == constant.FocusDB && m.DBCursor < len(m.Databases)-1 {
 					m.DBCursor++
 					m.Connect(m.Configs[m.ConfigCursor])
-				} else if m.SchemaPane == 1 && m.TableCursor < len(m.Tables)-1 {
+				} else if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables)-1 {
 					m.TableCursor++
 					m.UpdateColumns()
-				} else if m.SchemaPane == 2 && m.ColumnCursor < len(m.Columns)-1 {
+				} else if m.FocusPanel == constant.FocusColumn && m.ColumnCursor < len(m.Columns)-1 {
 					m.ColumnCursor++
 				}
 			case "enter":
-				if m.SchemaPane == 0 && m.DBCursor < len(m.Databases) {
+				if m.FocusPanel == constant.FocusDB && m.DBCursor < len(m.Databases) {
 					m.Connect(m.Configs[m.ConfigCursor])
 					if len(m.Tables) > 0 {
-						m.SchemaPane = 1
+						m.FocusPanel = constant.FocusTable
 					}
-				} else if m.SchemaPane == 1 && m.TableCursor < len(m.Tables) {
+				} else if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables) {
 					m.InsertStringToSQL(m.Tables[m.TableCursor] + " ")
-					m.FocusSQL = true
+					m.FocusPanel = constant.FocusEditor
 					m.SqlInput.Focus()
-				} else if m.SchemaPane == 2 && m.ColumnCursor < len(m.Columns) {
+				} else if m.FocusPanel == constant.FocusColumn && m.ColumnCursor < len(m.Columns) {
 					m.InsertStringToSQL(m.Columns[m.ColumnCursor] + " ")
-					m.FocusSQL = true
+					m.FocusPanel = constant.FocusEditor
 					m.SqlInput.Focus()
 				}
 			}
 		}
+
 	default:
-		if m.FocusSQL {
+		if m.FocusPanel == constant.FocusEditor {
 			m.SqlInput, cmd = m.SqlInput.Update(msg)
 			return m, cmd
 		}

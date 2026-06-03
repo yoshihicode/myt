@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"myt/internal/config"
+	"myt/internal/constant"
 	"myt/internal/database"
 	"sort"
 	"strings"
@@ -15,16 +16,8 @@ import (
 	"myt/internal/render"
 )
 
-type AppState int
-
-const (
-	SelectConfig AppState = iota
-	PasswordPrompt
-	Main
-)
-
 type Model struct {
-	State            AppState
+	State            constant.AppState
 	Configs          []config.Config
 	ConfigCursor     int
 	ErrorMsg         string
@@ -43,8 +36,7 @@ type Model struct {
 	AutocompleteDict []string
 	TxPending        bool
 
-	FocusSQL     bool
-	SchemaPane   int
+	FocusPanel   constant.Focus
 	OutputFormat render.OutputFormat
 	ShowHelp     bool
 
@@ -63,22 +55,21 @@ type Model struct {
 func NewModel(configs []config.Config, conSelect bool) *Model {
 	ti := textarea.New()
 	ti.Placeholder = "Write your SQL query here..."
-	ti.SetHeight(5)
+	ti.SetHeight(7)
 	ti.SetWidth(70)
 	ti.ShowLineNumbers = false
 	ti.Prompt = ""
 	ti.Blur()
 
 	m := &Model{
-		State:            SelectConfig,
+		State:            constant.AppStateConfig,
 		Configs:          configs,
 		ConfigCursor:     0,
 		ConnectionSelect: conSelect,
-		FocusSQL:         false,
-		SchemaPane:       0,
 		SqlInput:         ti,
 		OutputFormat:     render.Grid,
 		ShowHelp:         false,
+		FocusPanel:       constant.FocusDB,
 	}
 
 	if len(configs) == 1 {
@@ -100,7 +91,7 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 		}
 		err = m.InitConnection(m.Configs[m.ConfigCursor], netType)
 		if err == nil {
-			m.State = Main
+			m.State = constant.AppStateMain
 		} else {
 			m.ErrorMsg = err.Error()
 		}
@@ -110,7 +101,7 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 }
 
 func (m *Model) SetPasswordSubmit(target string) {
-	m.State = PasswordPrompt
+	m.State = constant.AppStatePassword
 	m.PromptTarget = target
 	m.PasswordInput = textinput.New()
 	if target == "SSH" {
@@ -123,7 +114,7 @@ func (m *Model) SetPasswordSubmit(target string) {
 }
 
 func (m *Model) Init() tea.Cmd {
-	if m.State == PasswordPrompt {
+	if m.State == constant.AppStatePassword {
 		return textinput.Blink
 	}
 	return nil
