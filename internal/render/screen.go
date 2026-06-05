@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mattn/go-runewidth"
 )
 
 var highlightColor = lipgloss.Color("62")
@@ -190,7 +191,7 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 
 	var dStr, tStr, cStr MyStringBuilder
 
-	// Databases
+	// 1. Databases
 	dStr.WriteStrings(borderStyle.Render("┌─ Databases ─"+strings.Repeat("─", 9)+"┐"), "\n")
 
 	startD := dbCursor - 2
@@ -199,15 +200,15 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 	}
 	for i := 0; i < 5; i++ {
 		idx := startD + i
-		lineText := ""
+		formattedLine := ""
 		isSelected := false
 
 		if idx < len(databases) {
 			isSelected = (dbCursor == idx)
-			lineText = truncateText(databases[idx], 18)
+			formattedLine = formatPanelLine(databases[idx], isSelected, 22)
+		} else {
+			formattedLine = formatPanelLine("", false, 22)
 		}
-
-		formattedLine := padRight(lineText, isSelected, 20)
 
 		if isSelected && focusPanel == constant.FocusDB {
 			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
@@ -217,7 +218,7 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 	}
 	dStr.WriteString(borderStyle.Render("└" + strings.Repeat("─", 22) + "┘"))
 
-	// Tables
+	// 2. Tables
 	schemaBorderColor = inactiveColor
 	if focusPanel == constant.FocusTable {
 		schemaBorderColor = highlightColor
@@ -231,15 +232,15 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 	}
 	for i := 0; i < 5; i++ {
 		idx := startT + i
-		lineText := ""
+		formattedLine := ""
 		isSelected := false
 
 		if idx < len(tables) {
 			isSelected = (tblCursor == idx)
-			lineText = truncateText(tables[idx], 20)
+			formattedLine = formatPanelLine(tables[idx], isSelected, 24)
+		} else {
+			formattedLine = formatPanelLine("", false, 24)
 		}
-
-		formattedLine := padRight(lineText, isSelected, 22)
 
 		if isSelected && constant.FocusTable == focusPanel {
 			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
@@ -249,7 +250,7 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 	}
 	tStr.WriteString(borderStyle.Render("└" + strings.Repeat("─", 24) + "┘"))
 
-	// Columns
+	// 3. Columns
 	schemaBorderColor = inactiveColor
 	if focusPanel == constant.FocusColumn {
 		schemaBorderColor = highlightColor
@@ -263,15 +264,15 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 	}
 	for i := 0; i < 5; i++ {
 		idx := startC + i
-		lineText := ""
+		formattedLine := ""
 		isSelected := false
 
 		if idx < len(columns) {
 			isSelected = (colCursor == idx)
-			lineText = truncateText(columns[idx], 18)
+			formattedLine = formatPanelLine(columns[idx], isSelected, 22)
+		} else {
+			formattedLine = formatPanelLine("", false, 22)
 		}
-
-		formattedLine := padRight(lineText, isSelected, 20)
 
 		if isSelected && focusPanel == constant.FocusColumn {
 			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
@@ -288,39 +289,51 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 	return lipgloss.JoinHorizontal(lipgloss.Top, leftPane, middlePane, rightPane)
 }
 
-func padRight(text string, isSelected bool, targetLen int) string {
+func formatPanelLine(name string, isSelected bool, with int) string {
 	prefix := "  "
 	if isSelected {
 		prefix = "> "
 	}
 
-	fullText := prefix + text
-
-	currentLen := len([]rune(fullText))
-
-	padLen := targetLen - currentLen
-	if padLen < 0 {
-		padLen = 0
+	if name == "" {
+		return strings.Repeat(" ", with)
 	}
 
-	return " " + fullText + strings.Repeat(" ", padLen) + " "
+	availWidth := with - 2
+
+	sWith := runewidth.StringWidth(name)
+
+	if sWith <= availWidth {
+		return prefix + name + strings.Repeat(" ", availWidth-sWith)
+	}
+
+	return truncateText(prefix+name, availWidth+2)
 }
 
 func truncateText(name string, maxWidth int) string {
-	if lipgloss.Width(name) <= maxWidth {
-		return name
+	currentWidth := lipgloss.Width(name)
+	if currentWidth <= maxWidth {
+		return name + strings.Repeat(" ", maxWidth-currentWidth)
 	}
+
 	var w int
 	var sb strings.Builder
 	for _, r := range name {
-		rw := lipgloss.Width(string(r))
-		if w+rw > maxWidth-2 { // ".."
+		rw := runewidth.RuneWidth(r)
+		if w+rw > maxWidth-2 {
 			break
 		}
 		sb.WriteRune(r)
 		w += rw
 	}
-	return sb.String() + ".."
+
+	result := sb.String() + ".."
+	finalWidth := w + 2
+	if finalWidth < maxWidth {
+		result += strings.Repeat(" ", maxWidth-finalWidth)
+	}
+
+	return result
 }
 
 func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPending bool, connName string) string {
