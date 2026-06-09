@@ -55,7 +55,6 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 		s.WriteStrings(lipgloss.NewStyle().Foreground(dangerColor).Render("Error: "+errorMsg), "\n\n")
 	}
 
-	maxName := 4
 	maxEndpoint := 8
 
 	type rowData struct {
@@ -79,9 +78,6 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 			network = "[SSH]"
 		}
 
-		if lipgloss.Width(cfg.Name) > maxName {
-			maxName = lipgloss.Width(cfg.Name)
-		}
 		if lipgloss.Width(endpoint) > maxEndpoint {
 			maxEndpoint = lipgloss.Width(endpoint)
 		}
@@ -205,9 +201,9 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 
 		if idx < len(databases) {
 			isSelected = (dbCursor == idx)
-			formattedLine = formatPanelLine(databases[idx], isSelected, 22)
+			formattedLine = truncateTextWithPrfx(databases[idx], isSelected, 22)
 		} else {
-			formattedLine = formatPanelLine("", false, 22)
+			formattedLine = truncateTextWithPrfx("", false, 22)
 		}
 
 		if isSelected && focusPanel == constant.FocusDB {
@@ -237,9 +233,9 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 
 		if idx < len(tables) {
 			isSelected = (tblCursor == idx)
-			formattedLine = formatPanelLine(tables[idx], isSelected, 24)
+			formattedLine = truncateTextWithPrfx(tables[idx], isSelected, 24)
 		} else {
-			formattedLine = formatPanelLine("", false, 24)
+			formattedLine = truncateTextWithPrfx("", false, 24)
 		}
 
 		if isSelected && constant.FocusTable == focusPanel {
@@ -269,9 +265,9 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 
 		if idx < len(columns) {
 			isSelected = (colCursor == idx)
-			formattedLine = formatPanelLine(columns[idx], isSelected, 22)
+			formattedLine = truncateTextWithPrfx(columns[idx], isSelected, 22)
 		} else {
-			formattedLine = formatPanelLine("", false, 22)
+			formattedLine = truncateTextWithPrfx("", false, 22)
 		}
 
 		if isSelected && focusPanel == constant.FocusColumn {
@@ -289,25 +285,12 @@ func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string,
 	return lipgloss.JoinHorizontal(lipgloss.Top, leftPane, middlePane, rightPane)
 }
 
-func formatPanelLine(name string, isSelected bool, with int) string {
+func truncateTextWithPrfx(name string, isSelected bool, with int) string {
 	prefix := "  "
 	if isSelected {
 		prefix = "> "
 	}
-
-	if name == "" {
-		return strings.Repeat(" ", with)
-	}
-
-	availWidth := with - 2
-
-	sWith := runewidth.StringWidth(name)
-
-	if sWith <= availWidth {
-		return prefix + name + strings.Repeat(" ", availWidth-sWith)
-	}
-
-	return truncateText(prefix+name, availWidth+2)
+	return truncateText(prefix+name, with)
 }
 
 func truncateText(name string, maxWidth int) string {
@@ -359,7 +342,7 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 		modeStr = lipgloss.NewStyle().Foreground(dangerColor).Bold(true).Render("[Read-Write] ")
 	}
 
-	envInfo := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Bold(true).Render(modeStr + truncateText(connName, 22))
+	envInfo := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Bold(true).Render(modeStr + truncateText(connName, 34-lipgloss.Width(modeStr)))
 
 	metaInfo := lipgloss.JoinHorizontal(lipgloss.Top,
 		envInfo,
