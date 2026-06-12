@@ -54,11 +54,11 @@ type Model struct {
 
 func NewModel(configs []config.Config, conSelect bool) *Model {
 	ti := textarea.New()
-	ti.Placeholder = "Write your SQL query here..."
-	ti.SetHeight(7)
-	ti.SetWidth(70)
+	ti.Placeholder = "Write SQL query here..."
 	ti.ShowLineNumbers = false
 	ti.Prompt = ""
+	ti.SetWidth(72)
+	ti.SetHeight(7)
 	ti.Blur()
 
 	ti.FocusedStyle.Base = ti.FocusedStyle.Base.UnsetBackground()

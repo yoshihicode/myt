@@ -302,11 +302,22 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 		statusBar = lipgloss.JoinVertical(lipgloss.Left, metaInfo)
 	}
 
-	sqlContent := lipgloss.JoinVertical(lipgloss.Left, text, "", statusBar)
+	var sb MyStringBuilder
+	borderStyle := lipgloss.NewStyle().Foreground(sqlBorderColor)
+	sb.WriteStrings(borderStyle.Render("┌─ SQL Editor ─"+strings.Repeat("─", 58)+"┐"), "\n")
 
-	return lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), true).
-		BorderForeground(sqlBorderColor).
-		Width(72).
-		Render(sqlContent)
+	sqlContent := lipgloss.JoinVertical(lipgloss.Left, text, "", statusBar)
+	lines := strings.Split(sqlContent, "\n")
+
+	for _, line := range lines {
+		w := lipgloss.Width(line)
+		if w < 70 {
+			line += strings.Repeat(" ", 70-w)
+		}
+		sb.WriteStrings(borderStyle.Render("│")+line+borderStyle.Render("│"), "\n")
+	}
+
+	sb.WriteString(borderStyle.Render("└" + strings.Repeat("─", 72) + "┘"))
+
+	return sb.String()
 }
