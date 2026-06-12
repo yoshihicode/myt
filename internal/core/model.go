@@ -61,6 +61,14 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 	ti.Prompt = ""
 	ti.Blur()
 
+	ti.FocusedStyle.Base = ti.FocusedStyle.Base.UnsetBackground()
+	ti.FocusedStyle.Text = ti.FocusedStyle.Text.UnsetBackground()
+	ti.FocusedStyle.Placeholder = ti.FocusedStyle.Placeholder.UnsetBackground()
+	ti.FocusedStyle.CursorLine = ti.FocusedStyle.CursorLine.UnsetBackground()
+	ti.BlurredStyle.Base = ti.BlurredStyle.Base.UnsetBackground()
+	ti.BlurredStyle.Text = ti.BlurredStyle.Text.UnsetBackground()
+	ti.BlurredStyle.Placeholder = ti.BlurredStyle.Placeholder.UnsetBackground()
+
 	m := &Model{
 		State:            constant.AppStateConfig,
 		Configs:          configs,
