@@ -178,111 +178,51 @@ func PasswordPrompt(target string, inputView string, errorMsg string, conName st
 
 }
 
-func SchemaPanel(focusPanel constant.Focus, databases []string, tables []string, columns []string, dbCursor int, tblCursor int, colCursor int) string {
-	schemaBorderColor := inactiveColor
-	if focusPanel == constant.FocusDB {
-		schemaBorderColor = highlightColor
-	}
-	borderStyle := lipgloss.NewStyle().Foreground(schemaBorderColor)
+func SchemaPanels(focusPanel constant.Focus, databases []string, tables []string, columns []string, dbCursor int, tblCursor int, colCursor int) string {
 
-	var dStr, tStr, cStr MyStringBuilder
-
-	// 1. Databases
-	dStr.WriteStrings(borderStyle.Render("┌─ Databases ─"+strings.Repeat("─", 9)+"┐"), "\n")
-
-	startD := dbCursor - 2
-	if startD < 0 {
-		startD = 0
-	}
-	for i := 0; i < 5; i++ {
-		idx := startD + i
-		formattedLine := ""
-		isSelected := false
-
-		if idx < len(databases) {
-			isSelected = (dbCursor == idx)
-			formattedLine = truncateTextWithPrfx(databases[idx], isSelected, 22)
-		} else {
-			formattedLine = truncateTextWithPrfx("", false, 22)
-		}
-
-		if isSelected && focusPanel == constant.FocusDB {
-			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
-		}
-
-		dStr.WriteStrings(borderStyle.Render("│")+formattedLine+borderStyle.Render("│"), "\n")
-	}
-	dStr.WriteString(borderStyle.Render("└" + strings.Repeat("─", 22) + "┘"))
-
-	// 2. Tables
-	schemaBorderColor = inactiveColor
-	if focusPanel == constant.FocusTable {
-		schemaBorderColor = highlightColor
-	}
-	borderStyle = lipgloss.NewStyle().Foreground(schemaBorderColor)
-	tStr.WriteStrings(borderStyle.Render("┌─ Tables ─"+strings.Repeat("─", 14)+"┐"), "\n")
-
-	startT := tblCursor - 2
-	if startT < 0 {
-		startT = 0
-	}
-	for i := 0; i < 5; i++ {
-		idx := startT + i
-		formattedLine := ""
-		isSelected := false
-
-		if idx < len(tables) {
-			isSelected = (tblCursor == idx)
-			formattedLine = truncateTextWithPrfx(tables[idx], isSelected, 24)
-		} else {
-			formattedLine = truncateTextWithPrfx("", false, 24)
-		}
-
-		if isSelected && constant.FocusTable == focusPanel {
-			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
-		}
-
-		tStr.WriteStrings(borderStyle.Render("│")+formattedLine+borderStyle.Render("│"), "\n")
-	}
-	tStr.WriteString(borderStyle.Render("└" + strings.Repeat("─", 24) + "┘"))
-
-	// 3. Columns
-	schemaBorderColor = inactiveColor
-	if focusPanel == constant.FocusColumn {
-		schemaBorderColor = highlightColor
-	}
-	borderStyle = lipgloss.NewStyle().Foreground(schemaBorderColor)
-	cStr.WriteStrings(borderStyle.Render("┌─ Columns ─"+strings.Repeat("─", 11)+"┐"), "\n")
-
-	startC := colCursor - 2
-	if startC < 0 {
-		startC = 0
-	}
-	for i := 0; i < 5; i++ {
-		idx := startC + i
-		formattedLine := ""
-		isSelected := false
-
-		if idx < len(columns) {
-			isSelected = (colCursor == idx)
-			formattedLine = truncateTextWithPrfx(columns[idx], isSelected, 22)
-		} else {
-			formattedLine = truncateTextWithPrfx("", false, 22)
-		}
-
-		if isSelected && focusPanel == constant.FocusColumn {
-			formattedLine = lipgloss.NewStyle().Foreground(highlightColor).Render(formattedLine)
-		}
-
-		cStr.WriteStrings(borderStyle.Render("│")+formattedLine+borderStyle.Render("│"), "\n")
-	}
-	cStr.WriteString(borderStyle.Render("└" + strings.Repeat("─", 22) + "┘"))
-
-	leftPane := dStr.String()
-	middlePane := tStr.String()
-	rightPane := cStr.String()
+	leftPane := schemaPanel(dbCursor, databases, "Databases", 22, focusPanel == constant.FocusDB)
+	middlePane := schemaPanel(tblCursor, tables, "Tables", 24, focusPanel == constant.FocusTable)
+	rightPane := schemaPanel(colCursor, columns, "Columns", 22, focusPanel == constant.FocusColumn)
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, leftPane, middlePane, rightPane)
+}
+
+func schemaPanel(cursor int, items []string, title string, width int, isFocused bool) string {
+	var str MyStringBuilder
+
+	borderColor := inactiveColor
+	if isFocused {
+		borderColor = highlightColor
+	}
+	borderStyle := lipgloss.NewStyle().Foreground(borderColor)
+
+	str.WriteStrings(borderStyle.Render("┌─ "+title+" ─"+strings.Repeat("─", width-4-len(title))+"┐"), "\n")
+
+	st := cursor - 2
+	if st < 0 {
+		st = 0
+	}
+	for i := 0; i < 5; i++ {
+		idx := st + i
+		line := ""
+		isSelected := false
+
+		if idx < len(items) {
+			isSelected = (cursor == idx)
+			line = truncateTextWithPrfx(items[idx], isSelected, width)
+		} else {
+			line = truncateTextWithPrfx("", false, width)
+		}
+
+		if isSelected && isFocused {
+			line = lipgloss.NewStyle().Foreground(highlightColor).Render(line)
+		}
+
+		str.WriteStrings(borderStyle.Render("│")+line+borderStyle.Render("│"), "\n")
+	}
+	str.WriteString(borderStyle.Render("└" + strings.Repeat("─", width) + "┘"))
+
+	return str.String()
 }
 
 func truncateTextWithPrfx(name string, isSelected bool, with int) string {

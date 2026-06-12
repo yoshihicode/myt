@@ -22,7 +22,7 @@ func (m *Model) View() string {
 		return render.Help()
 	}
 
-	schema := render.SchemaPanel(m.FocusPanel, m.Databases, m.Tables, m.Columns, m.DBCursor, m.TableCursor, m.ColumnCursor)
+	schema := render.SchemaPanels(m.FocusPanel, m.Databases, m.Tables, m.Columns, m.DBCursor, m.TableCursor, m.ColumnCursor)
 	s.WriteStrings(schema, "\n")
 
 	query := render.QueryPanel(m.FocusPanel == constant.FocusEditor, m.OutputFormat, m.SqlInput.View(), m.Configs[m.ConfigCursor].ReadWrite, m.TxPending, m.Configs[m.ConfigCursor].Name)
