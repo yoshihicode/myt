@@ -20,6 +20,7 @@ func Help() string {
 		lipgloss.NewStyle().Foreground(highlightColor).Bold(true).Render("== Global Shortcuts =="),
 		"  [Tab]          Focus Next Panel",
 		"  [Shift + Tab]  Focus Previous Panel",
+		"  [ESC]          Back To Previous Screen",
 		"  [Ctrl+L]       Clear Result",
 		"  [Ctrl+R]       Reload Schema Panel",
 		"  [Ctrl+H]       Help",
@@ -39,7 +40,7 @@ func Help() string {
 	helpBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder(), true).
 		BorderForeground(highlightColor).
-		Width(72).
+		Width(78).
 		Height(16).
 		Padding(0, 3).
 		Render(helpContent)
@@ -143,7 +144,31 @@ func Config(configs []config.Config, configCursor int, errorMsg string) string {
 		)
 	}
 
-	s.WriteString("\n   [Enter] Connect | [Q/Esc] Quit\n")
+	s.WriteString("\n   [Enter] Connect | [Ctrl + C] Quit\n")
+	return s.String()
+}
+
+func DbSelect(dbNames []string, dbCursor int, errorMsg string) string {
+	var s MyStringBuilder
+	s.WriteStrings("\n", lipgloss.NewStyle().Foreground(highlightColor).Bold(true).Render(" Select Database"), "\n\n")
+
+	if errorMsg != "" {
+		s.WriteStrings(lipgloss.NewStyle().Foreground(dangerColor).Render("Error: "+errorMsg), "\n\n")
+	}
+
+	for i, name := range dbNames {
+		cursor := "  "
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
+
+		if dbCursor == i {
+			cursor = lipgloss.NewStyle().Foreground(highlightColor).Render("> ")
+			style = lipgloss.NewStyle().Foreground(highlightColor).Bold(true)
+		}
+
+		s.WriteStrings(cursor, style.Render(name), "\n")
+	}
+
+	s.WriteString("\n   [Enter] Select | [Esc] Cancel | [Ctrl + C] Quit\n")
 	return s.String()
 }
 
@@ -174,17 +199,40 @@ func PasswordPrompt(target string, inputView string, errorMsg string, conName st
 
 	return lipgloss.NewStyle().
 		Render(lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("240")).Padding(1, 3).Width(72).Render(s.String()))
+			BorderForeground(lipgloss.Color("240")).Padding(1, 3).Width(78).Render(s.String()))
 
+}
+
+func HeaderBar(connName string, dbName string, rw bool) string {
+
+	mode := lipgloss.NewStyle().Foreground(safeColor).Background(lipgloss.Color(highlightColor)).Render("[Read Only] ")
+	if rw {
+		mode = lipgloss.NewStyle().Foreground(dangerColor).Background(lipgloss.Color(highlightColor)).Bold(true).Render("[Read-Write] ")
+	}
+	info := mode + lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(connName+": "+dbName)
+
+	if lipgloss.Width(info) < 80 {
+		pd := lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(strings.Repeat(" ", (80-lipgloss.Width(info))/2))
+		info = pd + info + pd
+		if lipgloss.Width(info) == 79 {
+			info += lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(" ")
+		}
+	}
+	header := truncateText(info, 80)
+
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("253")).
+		Background(lipgloss.Color(highlightColor)).
+		Bold(true).
+		Render(header)
 }
 
 func SchemaPanels(focusPanel constant.Focus, databases []string, tables []string, columns []string, dbCursor int, tblCursor int, colCursor int) string {
 
-	leftPane := schemaPanel(dbCursor, databases, "Databases", 22, focusPanel == constant.FocusDB)
-	middlePane := schemaPanel(tblCursor, tables, "Tables", 24, focusPanel == constant.FocusTable)
-	rightPane := schemaPanel(colCursor, columns, "Columns", 22, focusPanel == constant.FocusColumn)
+	middlePane := schemaPanel(tblCursor, tables, "Tables", 38, focusPanel == constant.FocusTable)
+	rightPane := schemaPanel(colCursor, columns, "Columns", 38, focusPanel == constant.FocusColumn)
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, leftPane, middlePane, rightPane)
+	return lipgloss.JoinHorizontal(lipgloss.Top, middlePane, rightPane)
 }
 
 func schemaPanel(cursor int, items []string, title string, width int, isFocused bool) string {
@@ -277,16 +325,8 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 	}
 	formatBar := lipgloss.JoinHorizontal(lipgloss.Top, formats...)
 
-	modeStr := lipgloss.NewStyle().Foreground(safeColor).Render("[Read Only] ")
-	if rw {
-		modeStr = lipgloss.NewStyle().Foreground(dangerColor).Bold(true).Render("[Read-Write] ")
-	}
-
-	envInfo := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Bold(true).Render(modeStr + truncateText(connName, 34-lipgloss.Width(modeStr)))
-
 	metaInfo := lipgloss.JoinHorizontal(lipgloss.Top,
-		envInfo,
-		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render(" | Format: "),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render(" Format: "),
 		formatBar,
 	)
 
@@ -304,7 +344,7 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 
 	var sb MyStringBuilder
 	borderStyle := lipgloss.NewStyle().Foreground(sqlBorderColor)
-	sb.WriteStrings(borderStyle.Render("┌─ SQL Editor ─"+strings.Repeat("─", 58)+"┐"), "\n")
+	sb.WriteStrings(borderStyle.Render("┌─ SQL Editor ─"+strings.Repeat("─", 64)+"┐"), "\n")
 
 	sqlContent := lipgloss.JoinVertical(lipgloss.Left, text, "", statusBar)
 	lines := strings.Split(sqlContent, "\n")
@@ -317,7 +357,7 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 		sb.WriteStrings(borderStyle.Render("│")+line+borderStyle.Render("│"), "\n")
 	}
 
-	sb.WriteString(borderStyle.Render("└" + strings.Repeat("─", 72) + "┘"))
+	sb.WriteString(borderStyle.Render("└" + strings.Repeat("─", 78) + "┘"))
 
 	return sb.String()
 }

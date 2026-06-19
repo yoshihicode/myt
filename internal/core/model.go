@@ -57,8 +57,8 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 	ti.Placeholder = "Write SQL query here..."
 	ti.ShowLineNumbers = false
 	ti.Prompt = ""
-	ti.SetWidth(72)
-	ti.SetHeight(7)
+	ti.SetWidth(78)
+	ti.SetHeight(6)
 	ti.Blur()
 
 	ti.FocusedStyle.Base = ti.FocusedStyle.Base.UnsetBackground()
@@ -77,7 +77,7 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 		SqlInput:         ti,
 		OutputFormat:     render.Grid,
 		ShowHelp:         false,
-		FocusPanel:       constant.FocusDB,
+		FocusPanel:       constant.FocusTable,
 	}
 
 	if len(configs) == 1 {
@@ -99,7 +99,7 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 		}
 		err = m.InitConnection(m.Configs[m.ConfigCursor], netType)
 		if err == nil {
-			m.State = constant.AppStateMain
+			m.State = constant.AppStateDBSelect
 		} else {
 			m.ErrorMsg = err.Error()
 		}

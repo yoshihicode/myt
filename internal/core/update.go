@@ -30,8 +30,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.State == constant.AppStateConfig {
 			switch msg.String() {
-			case "q", "esc":
-				return m, tea.Quit
 			case "up", "j":
 				if m.ConfigCursor > 0 {
 					m.ConfigCursor--
@@ -60,7 +58,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					m.ErrorMsg = err.Error()
 				} else {
-					m.State = constant.AppStateMain
+					m.State = constant.AppStateDBSelect
 				}
 			}
 			return m, nil
@@ -96,7 +94,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, textinput.Blink
 					} else {
 						m.ErrorMsg = ""
-						m.State = constant.AppStateMain
+						m.State = constant.AppStateDBSelect
 					}
 					return m, nil
 
@@ -117,7 +115,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.SetPasswordSubmit("DB")
 						return m, textinput.Blink
 					} else {
-						m.State = constant.AppStateMain
+						m.State = constant.AppStateDBSelect
 					}
 					return m, nil
 				}
@@ -135,8 +133,38 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-		if msg.String() == "ctrl+l" {
-			return m, tea.ClearScreen
+		if m.State == constant.AppStateDBSelect {
+			switch msg.String() {
+			case "up", "j":
+				if m.DBCursor > 0 {
+					m.DBCursor--
+				}
+			case "down", "k":
+				if m.DBCursor < len(m.Databases)-1 {
+					m.DBCursor++
+				}
+			case "esc":
+				if m.ConnectionSelect {
+					m.State = constant.AppStateConfig
+					m.DBCursor = 0
+					m.TableCursor = 0
+					m.ColumnCursor = 0
+					m.FocusPanel = 0
+					m.ErrorMsg = ""
+					return m, nil
+				} else {
+					m.Close()
+					return m, tea.Quit
+				}
+			case "enter":
+				m.Connect(m.Configs[m.ConfigCursor])
+				m.State = constant.AppStateMain
+				if len(m.Tables) > 0 {
+					m.FocusPanel = constant.FocusTable
+				}
+				return m, nil
+			}
+			return m, cmd
 		}
 
 		if m.ShowHelp {
@@ -145,13 +173,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
+
+		if msg.String() == "ctrl+l" {
+			return m, tea.ClearScreen
+		}
+
 		if msg.String() == "ctrl+h" {
 			m.ShowHelp = true
 			return m, nil
 		}
 
 		if msg.String() == "tab" {
-			m.FocusPanel = (m.FocusPanel + 1) % 4
+			m.FocusPanel = (m.FocusPanel + 1) % 3
 			if m.FocusPanel == constant.FocusEditor {
 				m.SqlInput.Focus()
 			} else {
@@ -161,7 +194,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if msg.String() == "shift+tab" {
-			m.FocusPanel = (m.FocusPanel - 1 + 4) % 4
+			m.FocusPanel = (m.FocusPanel - 1 + 3) % 3
 			if m.FocusPanel == constant.FocusEditor {
 				m.SqlInput.Focus()
 			} else {
@@ -188,10 +221,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "esc" {
 			if m.ConnectionSelect {
 				m.Close()
-				m.DBCursor = 0
 				m.TableCursor = 0
 				m.ColumnCursor = 0
-				m.State = constant.AppStateConfig
+				m.State = constant.AppStateDBSelect
 				m.FocusPanel = 0
 				m.ErrorMsg = ""
 				return m, nil
@@ -209,32 +241,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			switch msg.String() {
 			case "up", "j":
-				if m.FocusPanel == constant.FocusDB && m.DBCursor > 0 {
-					m.DBCursor--
-					m.Connect(m.Configs[m.ConfigCursor])
-				} else if m.FocusPanel == constant.FocusTable && m.TableCursor > 0 {
+				if m.FocusPanel == constant.FocusTable && m.TableCursor > 0 {
 					m.TableCursor--
 					m.UpdateColumns()
 				} else if m.FocusPanel == constant.FocusColumn && m.ColumnCursor > 0 {
 					m.ColumnCursor--
 				}
 			case "down", "k":
-				if m.FocusPanel == constant.FocusDB && m.DBCursor < len(m.Databases)-1 {
-					m.DBCursor++
-					m.Connect(m.Configs[m.ConfigCursor])
-				} else if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables)-1 {
+				if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables)-1 {
 					m.TableCursor++
 					m.UpdateColumns()
 				} else if m.FocusPanel == constant.FocusColumn && m.ColumnCursor < len(m.Columns)-1 {
 					m.ColumnCursor++
 				}
 			case "enter":
-				if m.FocusPanel == constant.FocusDB && m.DBCursor < len(m.Databases) {
-					m.Connect(m.Configs[m.ConfigCursor])
-					if len(m.Tables) > 0 {
-						m.FocusPanel = constant.FocusTable
-					}
-				} else if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables) {
+				if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables) {
 					m.InsertStringToSQL(m.Tables[m.TableCursor] + " ")
 					m.FocusPanel = constant.FocusEditor
 					m.SqlInput.Focus()
