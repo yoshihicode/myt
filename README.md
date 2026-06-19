@@ -142,6 +142,7 @@ Usage of myt:
 | --- | --- |
 | Tab | Focus next panel |
 | Shift + Tab | Focus previous Panel |
+| ESC | Back to previous screen |
 | Ctrl+L | Clear terminal result screen |
 | Ctrl+R | Reload metadata/schema from the current database |
 | Ctrl+C | Exit Application |
