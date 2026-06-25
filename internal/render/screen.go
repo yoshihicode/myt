@@ -205,11 +205,7 @@ func PasswordPrompt(target string, inputView string, errorMsg string, conName st
 
 func HeaderBar(connName string, dbName string, rw bool) string {
 
-	mode := lipgloss.NewStyle().Foreground(safeColor).Background(lipgloss.Color(highlightColor)).Render("[Read Only] ")
-	if rw {
-		mode = lipgloss.NewStyle().Foreground(dangerColor).Background(lipgloss.Color(highlightColor)).Bold(true).Render("[Read-Write] ")
-	}
-	info := mode + lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(connName+": "+dbName)
+	info := lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(connName + ": " + dbName)
 
 	if lipgloss.Width(info) < 80 {
 		pd := lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(strings.Repeat(" ", (80-lipgloss.Width(info))/2))
@@ -221,8 +217,6 @@ func HeaderBar(connName string, dbName string, rw bool) string {
 	header := truncateText(info, 80)
 
 	return lipgloss.NewStyle().
-		Foreground(lipgloss.Color("253")).
-		Background(lipgloss.Color(highlightColor)).
 		Bold(true).
 		Render(header)
 }
@@ -313,6 +307,11 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 		sqlBorderColor = highlightColor
 	}
 
+	mode := lipgloss.NewStyle().Foreground(safeColor).Render("[Read Only]")
+	if rw {
+		mode = lipgloss.NewStyle().Foreground(dangerColor).Render("[Read-Write]")
+	}
+
 	var formats []string
 	for i, name := range FormatNames {
 		style := lipgloss.NewStyle().Padding(0, 1)
@@ -326,6 +325,7 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 	formatBar := lipgloss.JoinHorizontal(lipgloss.Top, formats...)
 
 	metaInfo := lipgloss.JoinHorizontal(lipgloss.Top,
+		mode,
 		lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render(" Format: "),
 		formatBar,
 	)
