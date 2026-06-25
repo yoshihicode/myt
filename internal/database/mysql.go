@@ -121,6 +121,21 @@ func GetConnection(db *sql.DB, readWrite bool) (*sql.Conn, error) {
 			}
 			return nil, err
 		}
+	} else {
+		_, err := conn.ExecContext(context.Background(), "SET TRANSACTION READ ONLY")
+		if err != nil {
+			errStr := err.Error()
+			// `SET TRANSACTION READ ONLY` is not supported under 5.6.5, so we ignore this error if it occurs.
+			if !strings.Contains(errStr, "syntax") && !strings.Contains(errStr, "read only") {
+				if conn != nil {
+					conn.Close()
+				}
+				if db != nil {
+					db.Close()
+				}
+				return nil, err
+			}
+		}
 	}
 	return conn, nil
 }
