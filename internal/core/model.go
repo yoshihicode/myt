@@ -50,6 +50,13 @@ type Model struct {
 
 	TabMatches  []string
 	TabMatchIdx int
+
+	PromptYesAction func() tea.Cmd
+	PromptNoAction  func() tea.Cmd
+	PromptMsg       string
+	PromptTitle     string
+	PromptYesMsg    string
+	PromptNoMsg     string
 }
 
 func NewModel(configs []config.Config, conSelect bool) *Model {
@@ -80,7 +87,7 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 		FocusPanel:       constant.FocusTable,
 	}
 
-	if len(configs) == 1 {
+	if !conSelect {
 		// ssh password
 		if m.Configs[m.ConfigCursor].SSHUser != "" && m.Configs[m.ConfigCursor].SSHKey == "" && m.Configs[m.ConfigCursor].SSHPass == "" {
 			m.SetPasswordSubmit("SSH")
