@@ -486,16 +486,10 @@ func (m *Model) Autocomplete() {
 }
 
 func (m *Model) ExecuteSQL(queries []string) tea.Cmd {
-	// rawInput := m.SqlInput.Value()
-	// queries := strings.Split(rawInput, ";")
 	var output render.MyStringBuilder
 	cnt := 0
 
-	for _, q := range queries {
-		query := cleanQuery(q)
-		if query == "" {
-			continue
-		}
+	for _, query := range queries {
 		cnt++
 		qUpper := strings.ToUpper(query)
 
