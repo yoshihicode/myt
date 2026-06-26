@@ -7,6 +7,7 @@ const (
 	AppStatePassword
 	AppStateDBSelect
 	AppStateMain
+	AppStateConfirmPrompt
 )
 
 type Focus int

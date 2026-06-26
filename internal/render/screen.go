@@ -361,3 +361,20 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 
 	return sb.String()
 }
+
+func ConfirmPrompt(title string, msg string, yesmsg string, nomsg string) string {
+	content := lipgloss.JoinVertical(lipgloss.Center,
+		lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Bold(true).Render("⚠️ "+title),
+		"",
+		msg,
+		"",
+		lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("[y] "+yesmsg+"  /  [n] "+nomsg),
+	)
+
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("208")).
+		Padding(1, 4).
+		Margin(2, 0).
+		Render(content)
+}

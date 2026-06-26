@@ -174,6 +174,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		if m.State == constant.AppStateConfirmPrompt {
+			switch msg.String() {
+			case "y", "Y":
+				return m, m.PromptYesAction()
+			case "n", "N", "esc":
+				return m, m.PromptNoAction()
+			}
+			return m, nil
+		}
+
 		if msg.String() == "ctrl+l" {
 			return m, tea.ClearScreen
 		}
@@ -208,7 +218,35 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.String() == "ctrl+e" {
-			return m, m.ExecuteSQL()
+			queries := GenQueries(m.SqlInput.Value())
+			if m.Configs[m.ConfigCursor].ReadWrite && m.TxPending && HasImplicitCommitDDL(queries) {
+				m.State = constant.AppStateConfirmPrompt
+				m.PromptMsg = "The query contains DDL statements that will cause an implicit commit.\nAre you sure you want to execute it? (y/n)"
+				m.PromptTitle = "Confirm Execute"
+				m.PromptYesMsg = "Yes"
+				m.PromptNoMsg = "No"
+				if m.FocusPanel == constant.FocusEditor {
+					m.SqlInput.Blur()
+				}
+				m.PromptYesAction = func() tea.Cmd {
+					if m.FocusPanel == constant.FocusEditor {
+						m.SqlInput.Focus()
+					}
+					m.State = constant.AppStateMain
+					return m.ExecuteSQL(queries)
+				}
+				m.PromptNoAction = func() tea.Cmd {
+					if m.FocusPanel == constant.FocusEditor {
+						m.SqlInput.Focus()
+					}
+					m.State = constant.AppStateMain
+					return nil
+				}
+
+				return m, nil
+
+			}
+			return m, m.ExecuteSQL(queries)
 		}
 		if msg.String() == "ctrl+u" {
 			m.SqlInput.SetValue("")
@@ -219,6 +257,36 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.String() == "esc" {
+			if m.TxPending && m.Configs[m.ConfigCursor].ReadWrite {
+				m.State = constant.AppStateConfirmPrompt
+				m.PromptMsg = "There are uncommitted changes. Are you sure you want to exit? (y/n)"
+				m.PromptTitle = "Confirm Exit"
+				m.PromptYesMsg = "Yes"
+				m.PromptNoMsg = "No"
+				if m.FocusPanel == constant.FocusEditor {
+					m.SqlInput.Blur()
+				}
+				m.PromptYesAction = func() tea.Cmd {
+					m.Close()
+					m.TableCursor = 0
+					m.ColumnCursor = 0
+					m.State = constant.AppStateDBSelect
+					m.FocusPanel = 0
+					m.ErrorMsg = ""
+					return nil
+				}
+				m.PromptNoAction = func() tea.Cmd {
+					if m.FocusPanel == constant.FocusEditor {
+						m.SqlInput.Focus()
+					}
+					m.State = constant.AppStateMain
+					return nil
+				}
+
+				return m, nil
+
+			}
+
 			if m.ConnectionSelect {
 				m.Close()
 				m.TableCursor = 0
@@ -417,9 +485,9 @@ func (m *Model) Autocomplete() {
 	}
 }
 
-func (m *Model) ExecuteSQL() tea.Cmd {
-	rawInput := m.SqlInput.Value()
-	queries := strings.Split(rawInput, ";")
+func (m *Model) ExecuteSQL(queries []string) tea.Cmd {
+	// rawInput := m.SqlInput.Value()
+	// queries := strings.Split(rawInput, ";")
 	var output render.MyStringBuilder
 	cnt := 0
 
@@ -509,9 +577,36 @@ var (
 	lineCommentRegex  = regexp.MustCompile(`(?m)(?:--|#).*$`)
 )
 
+func GenQueries(text string) []string {
+	queries := strings.Split(text, ";")
+	result := []string{}
+
+	for _, q := range queries {
+		cq := cleanQuery(q)
+		if cq != "" {
+			result = append(result, cq)
+		}
+	}
+	return result
+}
+
 func cleanQuery(q string) string {
 	q = blockCommentRegex.ReplaceAllString(q, "")
 	q = lineCommentRegex.ReplaceAllString(q, "")
 
 	return strings.TrimSpace(q)
+}
+
+func HasImplicitCommitDDL(queries []string) bool {
+	for _, query := range queries {
+		uq := strings.ToUpper(query)
+		if strings.HasPrefix(uq, "ALTER") ||
+			strings.HasPrefix(uq, "DROP") ||
+			strings.HasPrefix(uq, "CREATE") ||
+			strings.HasPrefix(uq, "TRUNCATE") ||
+			strings.HasPrefix(uq, "RENAME") {
+			return true
+		}
+	}
+	return false
 }

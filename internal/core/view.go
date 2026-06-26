@@ -26,6 +26,10 @@ func (m *Model) View() string {
 		return render.Help()
 	}
 
+	if m.State == constant.AppStateConfirmPrompt {
+		return render.ConfirmPrompt(m.PromptTitle, m.PromptMsg, m.PromptYesMsg, m.PromptNoMsg)
+	}
+
 	currentDB := ""
 	if m.DBCursor < len(m.Databases) {
 		currentDB = m.Databases[m.DBCursor]
