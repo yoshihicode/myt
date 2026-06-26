@@ -535,7 +535,7 @@ func (m *Model) ExecuteSQL(queries []string) tea.Cmd {
 			}
 		}
 		formatted := render.Format(res, m.OutputFormat)
-		output.WriteString(formatted)
+		output.WriteStrings(formatted, "\n")
 	}
 
 	if output.Len() == 0 {
