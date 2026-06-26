@@ -30,8 +30,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.State == constant.AppStateConfig {
 			switch msg.String() {
-			case "q", "esc":
-				return m, tea.Quit
 			case "up", "j":
 				if m.ConfigCursor > 0 {
 					m.ConfigCursor--
@@ -60,7 +58,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					m.ErrorMsg = err.Error()
 				} else {
-					m.State = constant.AppStateMain
+					m.State = constant.AppStateDBSelect
 				}
 			}
 			return m, nil
@@ -96,7 +94,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, textinput.Blink
 					} else {
 						m.ErrorMsg = ""
-						m.State = constant.AppStateMain
+						m.State = constant.AppStateDBSelect
 					}
 					return m, nil
 
@@ -117,7 +115,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.SetPasswordSubmit("DB")
 						return m, textinput.Blink
 					} else {
-						m.State = constant.AppStateMain
+						m.State = constant.AppStateDBSelect
 					}
 					return m, nil
 				}
@@ -135,8 +133,38 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-		if msg.String() == "ctrl+l" {
-			return m, tea.ClearScreen
+		if m.State == constant.AppStateDBSelect {
+			switch msg.String() {
+			case "up", "j":
+				if m.DBCursor > 0 {
+					m.DBCursor--
+				}
+			case "down", "k":
+				if m.DBCursor < len(m.Databases)-1 {
+					m.DBCursor++
+				}
+			case "esc":
+				if m.ConnectionSelect {
+					m.State = constant.AppStateConfig
+					m.DBCursor = 0
+					m.TableCursor = 0
+					m.ColumnCursor = 0
+					m.FocusPanel = 0
+					m.ErrorMsg = ""
+					return m, nil
+				} else {
+					m.Close()
+					return m, tea.Quit
+				}
+			case "enter":
+				m.Connect(m.Configs[m.ConfigCursor])
+				m.State = constant.AppStateMain
+				if len(m.Tables) > 0 {
+					m.FocusPanel = constant.FocusTable
+				}
+				return m, nil
+			}
+			return m, cmd
 		}
 
 		if m.ShowHelp {
@@ -145,13 +173,28 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
+
+		if m.State == constant.AppStateConfirmPrompt {
+			switch msg.String() {
+			case "y", "Y":
+				return m, m.PromptYesAction()
+			case "n", "N", "esc":
+				return m, m.PromptNoAction()
+			}
+			return m, nil
+		}
+
+		if msg.String() == "ctrl+l" {
+			return m, tea.ClearScreen
+		}
+
 		if msg.String() == "ctrl+h" {
 			m.ShowHelp = true
 			return m, nil
 		}
 
 		if msg.String() == "tab" {
-			m.FocusPanel = (m.FocusPanel + 1) % 4
+			m.FocusPanel = (m.FocusPanel + 1) % 3
 			if m.FocusPanel == constant.FocusEditor {
 				m.SqlInput.Focus()
 			} else {
@@ -161,7 +204,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if msg.String() == "shift+tab" {
-			m.FocusPanel = (m.FocusPanel - 1 + 4) % 4
+			m.FocusPanel = (m.FocusPanel - 1 + 3) % 3
 			if m.FocusPanel == constant.FocusEditor {
 				m.SqlInput.Focus()
 			} else {
@@ -175,7 +218,35 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.String() == "ctrl+e" {
-			return m, m.ExecuteSQL()
+			queries := GenQueries(m.SqlInput.Value())
+			if m.Configs[m.ConfigCursor].ReadWrite && m.TxPending && HasImplicitCommitDDL(queries) {
+				m.State = constant.AppStateConfirmPrompt
+				m.PromptMsg = "The query contains DDL statements that will cause an implicit commit.\nAre you sure you want to execute it? (y/n)"
+				m.PromptTitle = "Confirm Execute"
+				m.PromptYesMsg = "Yes"
+				m.PromptNoMsg = "No"
+				if m.FocusPanel == constant.FocusEditor {
+					m.SqlInput.Blur()
+				}
+				m.PromptYesAction = func() tea.Cmd {
+					if m.FocusPanel == constant.FocusEditor {
+						m.SqlInput.Focus()
+					}
+					m.State = constant.AppStateMain
+					return m.ExecuteSQL(queries)
+				}
+				m.PromptNoAction = func() tea.Cmd {
+					if m.FocusPanel == constant.FocusEditor {
+						m.SqlInput.Focus()
+					}
+					m.State = constant.AppStateMain
+					return nil
+				}
+
+				return m, nil
+
+			}
+			return m, m.ExecuteSQL(queries)
 		}
 		if msg.String() == "ctrl+u" {
 			m.SqlInput.SetValue("")
@@ -186,12 +257,41 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.String() == "esc" {
+			if m.TxPending && m.Configs[m.ConfigCursor].ReadWrite {
+				m.State = constant.AppStateConfirmPrompt
+				m.PromptMsg = "There are uncommitted changes. Are you sure you want to exit? (y/n)"
+				m.PromptTitle = "Confirm Exit"
+				m.PromptYesMsg = "Yes"
+				m.PromptNoMsg = "No"
+				if m.FocusPanel == constant.FocusEditor {
+					m.SqlInput.Blur()
+				}
+				m.PromptYesAction = func() tea.Cmd {
+					m.Close()
+					m.TableCursor = 0
+					m.ColumnCursor = 0
+					m.State = constant.AppStateDBSelect
+					m.FocusPanel = 0
+					m.ErrorMsg = ""
+					return nil
+				}
+				m.PromptNoAction = func() tea.Cmd {
+					if m.FocusPanel == constant.FocusEditor {
+						m.SqlInput.Focus()
+					}
+					m.State = constant.AppStateMain
+					return nil
+				}
+
+				return m, nil
+
+			}
+
 			if m.ConnectionSelect {
 				m.Close()
-				m.DBCursor = 0
 				m.TableCursor = 0
 				m.ColumnCursor = 0
-				m.State = constant.AppStateConfig
+				m.State = constant.AppStateDBSelect
 				m.FocusPanel = 0
 				m.ErrorMsg = ""
 				return m, nil
@@ -209,32 +309,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			switch msg.String() {
 			case "up", "j":
-				if m.FocusPanel == constant.FocusDB && m.DBCursor > 0 {
-					m.DBCursor--
-					m.Connect(m.Configs[m.ConfigCursor])
-				} else if m.FocusPanel == constant.FocusTable && m.TableCursor > 0 {
+				if m.FocusPanel == constant.FocusTable && m.TableCursor > 0 {
 					m.TableCursor--
 					m.UpdateColumns()
 				} else if m.FocusPanel == constant.FocusColumn && m.ColumnCursor > 0 {
 					m.ColumnCursor--
 				}
 			case "down", "k":
-				if m.FocusPanel == constant.FocusDB && m.DBCursor < len(m.Databases)-1 {
-					m.DBCursor++
-					m.Connect(m.Configs[m.ConfigCursor])
-				} else if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables)-1 {
+				if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables)-1 {
 					m.TableCursor++
 					m.UpdateColumns()
 				} else if m.FocusPanel == constant.FocusColumn && m.ColumnCursor < len(m.Columns)-1 {
 					m.ColumnCursor++
 				}
 			case "enter":
-				if m.FocusPanel == constant.FocusDB && m.DBCursor < len(m.Databases) {
-					m.Connect(m.Configs[m.ConfigCursor])
-					if len(m.Tables) > 0 {
-						m.FocusPanel = constant.FocusTable
-					}
-				} else if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables) {
+				if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables) {
 					m.InsertStringToSQL(m.Tables[m.TableCursor] + " ")
 					m.FocusPanel = constant.FocusEditor
 					m.SqlInput.Focus()
@@ -396,9 +485,9 @@ func (m *Model) Autocomplete() {
 	}
 }
 
-func (m *Model) ExecuteSQL() tea.Cmd {
-	rawInput := m.SqlInput.Value()
-	queries := strings.Split(rawInput, ";")
+func (m *Model) ExecuteSQL(queries []string) tea.Cmd {
+	// rawInput := m.SqlInput.Value()
+	// queries := strings.Split(rawInput, ";")
 	var output render.MyStringBuilder
 	cnt := 0
 
@@ -488,9 +577,36 @@ var (
 	lineCommentRegex  = regexp.MustCompile(`(?m)(?:--|#).*$`)
 )
 
+func GenQueries(text string) []string {
+	queries := strings.Split(text, ";")
+	result := []string{}
+
+	for _, q := range queries {
+		cq := cleanQuery(q)
+		if cq != "" {
+			result = append(result, cq)
+		}
+	}
+	return result
+}
+
 func cleanQuery(q string) string {
 	q = blockCommentRegex.ReplaceAllString(q, "")
 	q = lineCommentRegex.ReplaceAllString(q, "")
 
 	return strings.TrimSpace(q)
+}
+
+func HasImplicitCommitDDL(queries []string) bool {
+	for _, query := range queries {
+		uq := strings.ToUpper(query)
+		if strings.HasPrefix(uq, "ALTER") ||
+			strings.HasPrefix(uq, "DROP") ||
+			strings.HasPrefix(uq, "CREATE") ||
+			strings.HasPrefix(uq, "TRUNCATE") ||
+			strings.HasPrefix(uq, "RENAME") {
+			return true
+		}
+	}
+	return false
 }
