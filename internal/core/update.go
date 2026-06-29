@@ -287,15 +287,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			}
 
-			if m.ConnectionSelect {
-				m.Close()
-				m.TableCursor = 0
-				m.ColumnCursor = 0
-				m.State = constant.AppStateDBSelect
-				m.FocusPanel = 0
-				m.ErrorMsg = ""
-				return m, nil
-			}
+			m.Close()
+			m.TableCursor = 0
+			m.ColumnCursor = 0
+			m.State = constant.AppStateDBSelect
+			m.FocusPanel = 0
+			m.ErrorMsg = ""
+			return m, nil
 		}
 
 		if m.FocusPanel == constant.FocusEditor {
