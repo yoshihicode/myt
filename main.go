@@ -63,7 +63,7 @@ func main() {
 	} else {
 
 		configs = append(configs, config.Config{
-			Name:      "CLI Connection",
+			Name:      "",
 			Host:      *host,
 			Port:      *port,
 			User:      *user,

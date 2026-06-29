@@ -204,8 +204,10 @@ func PasswordPrompt(target string, inputView string, errorMsg string, conName st
 }
 
 func HeaderBar(connName string, dbName string, rw bool) string {
-
-	info := lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(connName + ": " + dbName)
+	if connName != "" {
+		connName = connName + ": "
+	}
+	info := lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(connName + dbName)
 
 	if lipgloss.Width(info) < 80 {
 		pd := lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(strings.Repeat(" ", (80-lipgloss.Width(info))/2))
