@@ -303,7 +303,7 @@ func truncateText(name string, maxWidth int) string {
 	return result
 }
 
-func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPending bool, connName string) string {
+func QueryPanel(isFocused bool, isEditing bool, format OutputFormat, text string, rw bool, txPending bool, connName string) string {
 	sqlBorderColor := inactiveColor
 	if isFocused {
 		sqlBorderColor = highlightColor
@@ -346,7 +346,12 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 
 	var sb MyStringBuilder
 	borderStyle := lipgloss.NewStyle().Foreground(sqlBorderColor)
-	sb.WriteStrings(borderStyle.Render("┌─ SQL Editor ─"+strings.Repeat("─", 64)+"┐"), "\n")
+	editvew := "[VIEW]"
+	if isEditing {
+		editvew = "[EDIT]"
+	}
+
+	sb.WriteStrings(borderStyle.Render("┌─ SQL Editor "+editvew+" ─"+strings.Repeat("─", 57)+"┐"), "\n")
 
 	sqlContent := lipgloss.JoinVertical(lipgloss.Left, text, "", statusBar)
 	lines := strings.Split(sqlContent, "\n")

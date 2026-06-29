@@ -38,7 +38,8 @@ func (m *Model) View() string {
 	schema := render.SchemaPanels(m.FocusPanel, m.Databases, m.Tables, m.Columns, m.DBCursor, m.TableCursor, m.ColumnCursor)
 	s.WriteStrings(schema, "\n")
 
-	query := render.QueryPanel(m.FocusPanel == constant.FocusEditor, m.OutputFormat, m.SqlInput.View(), m.Configs[m.ConfigCursor].ReadWrite, m.TxPending, m.Configs[m.ConfigCursor].Name)
+	query := render.QueryPanel(m.FocusPanel == constant.FocusEditor, m.IsEditing,
+		m.OutputFormat, m.SqlInput.View(), m.Configs[m.ConfigCursor].ReadWrite, m.TxPending, m.Configs[m.ConfigCursor].Name)
 
 	s.WriteStrings(query, "\n")
 	s.WriteStrings(lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render(" [Ctrl+H] Help | [Tab] Switch Panel | [Ctrl+E] Run Query | [ESC] Back"), "\n")

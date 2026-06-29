@@ -44,7 +44,8 @@ type Model struct {
 	TableCursor  int
 	ColumnCursor int
 
-	SqlInput textarea.Model
+	SqlInput  textarea.Model
+	IsEditing bool
 
 	DBNet string
 
@@ -85,6 +86,7 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 		OutputFormat:     render.Grid,
 		ShowHelp:         false,
 		FocusPanel:       constant.FocusTable,
+		IsEditing:        false,
 	}
 
 	if !conSelect {

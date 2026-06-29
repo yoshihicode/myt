@@ -198,6 +198,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.FocusPanel == constant.FocusEditor {
 				m.SqlInput.Focus()
 			} else {
+				m.IsEditing = false
 				m.SqlInput.Blur()
 			}
 			return m, nil
@@ -208,6 +209,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.FocusPanel == constant.FocusEditor {
 				m.SqlInput.Focus()
 			} else {
+				m.IsEditing = false
 				m.SqlInput.Blur()
 			}
 			return m, nil
@@ -257,6 +259,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.String() == "esc" {
+			if m.IsEditing {
+				m.IsEditing = false
+				return m, nil
+			}
 			if m.TxPending && m.Configs[m.ConfigCursor].ReadWrite {
 				m.State = constant.AppStateConfirmPrompt
 				m.PromptMsg = "There are uncommitted changes. Are you sure you want to exit? (y/n)"
@@ -273,6 +279,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.State = constant.AppStateDBSelect
 					m.FocusPanel = 0
 					m.ErrorMsg = ""
+					m.IsEditing = false
 					return nil
 				}
 				m.PromptNoAction = func() tea.Cmd {
@@ -293,10 +300,37 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.State = constant.AppStateDBSelect
 			m.FocusPanel = 0
 			m.ErrorMsg = ""
+			m.IsEditing = false
 			return m, nil
 		}
 
 		if m.FocusPanel == constant.FocusEditor {
+			if !m.IsEditing {
+				switch msg.String() {
+				case "enter", "i", "I":
+					m.IsEditing = true
+					m.SqlInput.Focus()
+					return m, nil
+				case "up", "down", "left", "right":
+					m.SqlInput, cmd = m.SqlInput.Update(msg)
+					return m, cmd
+				case "j", "k", "h", "l":
+					var msg2 tea.Msg
+					switch msg.String() {
+					case "j":
+						msg2 = tea.KeyMsg{Type: tea.KeyDown}
+					case "k":
+						msg2 = tea.KeyMsg{Type: tea.KeyUp}
+					case "h":
+						msg2 = tea.KeyMsg{Type: tea.KeyLeft}
+					case "l":
+						msg2 = tea.KeyMsg{Type: tea.KeyRight}
+					}
+					m.SqlInput, cmd = m.SqlInput.Update(msg2)
+					return m, cmd
+				}
+				return m, nil
+			}
 			if msg.String() == "ctrl+space" || msg.String() == "ctrl+@" || msg.String() == "ctrl+n" {
 				m.Autocomplete()
 				return m, nil
@@ -334,10 +368,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	default:
-		if m.FocusPanel == constant.FocusEditor {
-			m.SqlInput, cmd = m.SqlInput.Update(msg)
-			return m, cmd
-		}
 	}
 	return m, nil
 }
