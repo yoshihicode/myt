@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"path/filepath"
@@ -169,10 +170,20 @@ func ExecuteQuery(ctx context.Context, conn *sql.Conn, query string) (*QueryResu
 		rowMap := make(map[string]interface{})
 		for i, colName := range cols {
 			val := vals[i]
-			if b, ok := val.([]byte); ok {
-				rowMap[colName] = string(b)
-			} else {
-				rowMap[colName] = val
+
+			if val == nil {
+				rowMap[colName] = nil
+				continue
+			}
+			switch v := val.(type) {
+			case []byte:
+				rowMap[colName] = string(v)
+			case int64:
+				rowMap[colName] = strconv.FormatInt(v, 10)
+			case uint64:
+				rowMap[colName] = strconv.FormatUint(v, 10)
+			default:
+				rowMap[colName] = fmt.Sprintf("%v", v)
 			}
 		}
 		results = append(results, rowMap)
