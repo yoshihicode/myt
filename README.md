@@ -51,17 +51,18 @@ tar -xzvf myt_windows_amd64.tar.gz
 myt -host=127.0.0.1 -port=3306 -user=root -password=your_password
 ```
 
+### SSH Connection
 ⚠️ **Prerequisite for SSH Tunneling:** `myt` verifies the bastion host's SSH key against your local `~/.ssh/known_hosts` and refuses to connect if the key is missing or doesn't match (to protect against man-in-the-middle attacks). Before using `-ssh-host`, register the bastion's key by connecting to it once with the standard `ssh` command (accepting the fingerprint prompt), or by running:
 ```bash
 ssh-keyscan -p <ssh-port> <ssh-host> >> ~/.ssh/known_hosts
 ```
 Note that this must match the exact hostname/IP you pass to `myt` — e.g. entries for `localhost` will not be used for `127.0.0.1`, since they are matched as literal strings, not resolved. If the bastion's host key changes (e.g. a recreated container or reinstalled server), remove the stale entry first with `ssh-keygen -R "[host]:port"` before re-scanning.
 
-### SSH Tunnel (Password Authentication)
+#### SSH Tunnel (Password Authentication)
 ```bash
 myt -host=10.0.0.5 -user=db_user -password=db_password -ssh-host=192.168.1.10 -ssh-port=22 -ssh-user=bastion_user -ssh-password=bastion_password
 ```
-### SSH Tunnel (SSH Key Authentication)
+#### SSH Tunnel (SSH Key Authentication)
 ```bash
 myt -host=10.0.0.5 -user=db_user -password=db_password -ssh-host=192.168.1.10 -ssh-user=bastion_user -ssh-key=$HOME/.ssh/id_rsa
 ```
