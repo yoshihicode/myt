@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/ssh"
@@ -20,6 +21,23 @@ type QueryResult struct {
 	Columns []string
 	Rows    []map[string]interface{}
 	Message string
+}
+
+var (
+	sshClientsMu sync.Mutex
+	sshClients   = map[string]*ssh.Client{}
+)
+
+// replaceSSHClient registers client as the active tunnel for netType,
+// closing whatever client was previously registered for it.
+func replaceSSHClient(netType string, client *ssh.Client) {
+	sshClientsMu.Lock()
+	old := sshClients[netType]
+	sshClients[netType] = client
+	sshClientsMu.Unlock()
+	if old != nil {
+		old.Close()
+	}
 }
 
 func SetupSSH(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType string) error {
@@ -67,6 +85,8 @@ func SetupSSH(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType str
 	if err != nil {
 		return errors.New("Failed to establish SSH connection to the bastion server: " + err.Error())
 	}
+
+	replaceSSHClient(netType, sshClient)
 
 	mysql.RegisterDialContext(netType, func(ctx context.Context, addr string) (net.Conn, error) {
 		return sshClient.Dial("tcp", addr)
