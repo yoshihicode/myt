@@ -545,11 +545,15 @@ func (m *Model) ExecuteSQL(queries []string) tea.Cmd {
 			continue
 		}
 		cnt++
-		qUpper := strings.ToUpper(query)
+		// Resolve past any leading WITH (CTE) clause to the terminal statement,
+		// since MySQL 8+ supports writable CTEs like `WITH t AS (...) UPDATE ...`
+		// and a plain "starts with WITH" check would let that slip through in
+		// read-only mode.
+		qUpper := effectiveStatementUpper(query)
 
 		isAllowed := m.Configs[m.ConfigCursor].ReadWrite
 		if !isAllowed {
-			allowedCommands := []string{"SELECT", "SHOW", "DESC", "EXPLAIN", "WITH"}
+			allowedCommands := []string{"SELECT", "SHOW", "DESC", "EXPLAIN"}
 			for _, cmd := range allowedCommands {
 				if strings.HasPrefix(qUpper, cmd) {
 					isAllowed = true
@@ -636,6 +640,121 @@ func GenQueries(text string) []string {
 		}
 	}
 	return result
+}
+
+func effectiveStatementUpper(query string) string {
+	rest := query[skipLeadingCTEs(query):]
+	return strings.ToUpper(strings.TrimSpace(rest))
+}
+
+func skipLeadingCTEs(query string) int {
+	n := len(query)
+	i := 0
+
+	skipSpace := func() {
+		for i < n && unicode.IsSpace(rune(query[i])) {
+			i++
+		}
+	}
+	readWord := func() string {
+		start := i
+		for i < n && (unicode.IsLetter(rune(query[i])) || query[i] == '_') {
+			i++
+		}
+		return strings.ToUpper(query[start:i])
+	}
+	skipQuoted := func(q byte) {
+		i++ // opening quote
+		for i < n {
+			if query[i] == '\\' && i+1 < n {
+				i += 2
+				continue
+			}
+			if query[i] == q {
+				i++
+				return
+			}
+			i++
+		}
+	}
+	skipIdent := func() {
+		if i < n && (query[i] == '`' || query[i] == '"') {
+			skipQuoted(query[i])
+			return
+		}
+		for i < n && (unicode.IsLetter(rune(query[i])) || unicode.IsDigit(rune(query[i])) || query[i] == '_') {
+			i++
+		}
+	}
+	skipParenGroup := func() bool {
+		if i >= n || query[i] != '(' {
+			return false
+		}
+		depth := 0
+		for i < n {
+			switch query[i] {
+			case '(':
+				depth++
+				i++
+			case ')':
+				depth--
+				i++
+				if depth == 0 {
+					return true
+				}
+			case '\'', '"', '`':
+				skipQuoted(query[i])
+			default:
+				i++
+			}
+		}
+		return true
+	}
+
+	skipSpace()
+	start := i
+	if readWord() != "WITH" {
+		return 0
+	}
+
+	skipSpace()
+	afterWith := i
+	if readWord() != "RECURSIVE" {
+		i = afterWith
+	}
+	skipSpace()
+
+	for {
+		skipIdent()
+		skipSpace()
+		if i < n && query[i] == '(' {
+			if !skipParenGroup() {
+				return start
+			}
+			skipSpace()
+		}
+		beforeAs := i
+		if readWord() == "AS" {
+			skipSpace()
+		} else {
+			i = beforeAs
+		}
+		if i < n && query[i] == '(' {
+			if !skipParenGroup() {
+				return start
+			}
+			skipSpace()
+		} else {
+			return start // malformed CTE body; fail closed
+		}
+		if i < n && query[i] == ',' {
+			i++
+			skipSpace()
+			continue
+		}
+		break
+	}
+	return i
 }
 
 func cleanQuery(q string) string {
