@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 )
 
 type QueryResult struct {
@@ -51,10 +52,15 @@ func SetupSSH(sshHost string, sshPort int, sshUser, sshPass, sshKey, netType str
 		return errors.New("SSH connection requires either a password or a private key")
 	}
 
+	hostKeyCallback, err := knownHostsCallback()
+	if err != nil {
+		return err
+	}
+
 	sshConfig := &ssh.ClientConfig{
 		User:            sshUser,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: hostKeyCallback,
 	}
 
 	sshClient, err := ssh.Dial("tcp", sshHost+":"+strconv.Itoa(sshPort), sshConfig)
@@ -193,6 +199,21 @@ func ExecuteQuery(ctx context.Context, conn *sql.Conn, query string) (*QueryResu
 		Columns: cols,
 		Rows:    results,
 	}, nil
+}
+
+func knownHostsCallback() (ssh.HostKeyCallback, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, errors.New("Failed to determine home directory for known_hosts: " + err.Error())
+	}
+
+	khPath := filepath.Join(home, ".ssh", "known_hosts")
+	callback, err := knownhosts.New(khPath)
+	if err != nil {
+		return nil, errors.New("Failed to load known_hosts file (" + khPath + "): " + err.Error() +
+			". Connect to the host once with the ssh command to add its key, then retry.")
+	}
+	return callback, nil
 }
 
 func expandHome(path string) string {
