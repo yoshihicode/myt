@@ -154,6 +154,7 @@ Usage of myt:
 | --- | --- |
 |↑ / ↓ | Move the panel cursor up and down |
 |Enter | Select item / Insert the highlighted name directly into the SQL editor |
+|Letter / Digit | Jump the cursor to the next item starting with that character (press repeatedly to cycle through matches) |
 
 ### SQL Panel
 | Key | Action |

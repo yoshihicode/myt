@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -30,11 +31,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.State == constant.AppStateConfig {
 			switch msg.String() {
-			case "up", "j":
+			case "up":
 				if m.ConfigCursor > 0 {
 					m.ConfigCursor--
 				}
-			case "down", "k":
+			case "down":
 				if m.ConfigCursor < len(m.Configs)-1 {
 					m.ConfigCursor++
 				}
@@ -59,6 +60,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.ErrorMsg = err.Error()
 				} else {
 					m.State = constant.AppStateDBSelect
+				}
+			default:
+				if r, ok := jumpRune(msg); ok {
+					names := make([]string, len(m.Configs))
+					for i, c := range m.Configs {
+						names[i] = c.Name
+					}
+					m.ConfigCursor = jumpToPrefix(names, m.ConfigCursor, r)
 				}
 			}
 			return m, nil
@@ -135,11 +144,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.State == constant.AppStateDBSelect {
 			switch msg.String() {
-			case "up", "j":
+			case "up":
 				if m.DBCursor > 0 {
 					m.DBCursor--
 				}
-			case "down", "k":
+			case "down":
 				if m.DBCursor < len(m.Databases)-1 {
 					m.DBCursor++
 				}
@@ -163,6 +172,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.FocusPanel = constant.FocusTable
 				}
 				return m, nil
+			default:
+				if r, ok := jumpRune(msg); ok {
+					m.DBCursor = jumpToPrefix(m.Databases, m.DBCursor, r)
+				}
 			}
 			return m, cmd
 		}
@@ -308,14 +321,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		} else {
 			switch msg.String() {
-			case "up", "j":
+			case "up":
 				if m.FocusPanel == constant.FocusTable && m.TableCursor > 0 {
 					m.TableCursor--
 					m.UpdateColumns()
 				} else if m.FocusPanel == constant.FocusColumn && m.ColumnCursor > 0 {
 					m.ColumnCursor--
 				}
-			case "down", "k":
+			case "down":
 				if m.FocusPanel == constant.FocusTable && m.TableCursor < len(m.Tables)-1 {
 					m.TableCursor++
 					m.UpdateColumns()
@@ -332,6 +345,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.FocusPanel = constant.FocusEditor
 					m.SqlInput.Focus()
 				}
+			default:
+				if r, ok := jumpRune(msg); ok {
+					if m.FocusPanel == constant.FocusTable {
+						m.TableCursor = jumpToPrefix(m.Tables, m.TableCursor, r)
+						m.UpdateColumns()
+					} else if m.FocusPanel == constant.FocusColumn {
+						m.ColumnCursor = jumpToPrefix(m.Columns, m.ColumnCursor, r)
+					}
+				}
 			}
 		}
 
@@ -342,6 +364,32 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+func jumpRune(msg tea.KeyMsg) (rune, bool) {
+	if msg.Type != tea.KeyRunes || len(msg.Runes) != 1 {
+		return 0, false
+	}
+	return msg.Runes[0], true
+}
+
+func jumpToPrefix(items []string, cursor int, target rune) int {
+	n := len(items)
+	if n == 0 {
+		return cursor
+	}
+	target = unicode.ToLower(target)
+	for i := 1; i <= n; i++ {
+		idx := (cursor + i) % n
+		first, size := utf8.DecodeRuneInString(items[idx])
+		if size == 0 {
+			continue
+		}
+		if unicode.ToLower(first) == target {
+			return idx
+		}
+	}
+	return cursor
 }
 
 func (m *Model) Autocomplete() {
