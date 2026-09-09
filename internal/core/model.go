@@ -57,6 +57,20 @@ type Model struct {
 	PromptTitle     string
 	PromptYesMsg    string
 	PromptNoMsg     string
+
+	Width  int
+	Height int
+}
+
+const defaultContentWidth = 80
+
+const minContentWidth = 60
+
+func (m *Model) ContentWidth() int {
+	if m.Width < minContentWidth {
+		return minContentWidth
+	}
+	return m.Width
 }
 
 func NewModel(configs []config.Config, conSelect bool) *Model {
@@ -64,7 +78,7 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 	ti.Placeholder = "Write SQL query here..."
 	ti.ShowLineNumbers = false
 	ti.Prompt = ""
-	ti.SetWidth(78)
+	ti.SetWidth(defaultContentWidth - 2)
 	ti.SetHeight(6)
 	ti.Blur()
 
@@ -85,6 +99,7 @@ func NewModel(configs []config.Config, conSelect bool) *Model {
 		OutputFormat:     render.Grid,
 		ShowHelp:         false,
 		FocusPanel:       constant.FocusTable,
+		Width:            defaultContentWidth,
 	}
 
 	if !conSelect {

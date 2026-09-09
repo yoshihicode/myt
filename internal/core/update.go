@@ -22,6 +22,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.Width = msg.Width
+		m.Height = msg.Height
+		m.SqlInput.SetWidth(m.ContentWidth() - 2)
+		return m, tea.ClearScreen
 	case tea.KeyMsg:
 
 		if msg.String() == "ctrl+c" {

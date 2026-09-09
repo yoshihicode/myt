@@ -34,11 +34,12 @@ func (m *Model) View() string {
 	if m.DBCursor < len(m.Databases) {
 		currentDB = m.Databases[m.DBCursor]
 	}
-	s.WriteStrings(render.HeaderBar(m.Configs[m.ConfigCursor].Name, currentDB, m.Configs[m.ConfigCursor].ReadWrite), "\n")
-	schema := render.SchemaPanels(m.FocusPanel, m.Databases, m.Tables, m.Columns, m.DBCursor, m.TableCursor, m.ColumnCursor)
+	width := m.ContentWidth()
+	s.WriteStrings(render.HeaderBar(m.Configs[m.ConfigCursor].Name, currentDB, m.Configs[m.ConfigCursor].ReadWrite, width), "\n")
+	schema := render.SchemaPanels(m.FocusPanel, m.Databases, m.Tables, m.Columns, m.DBCursor, m.TableCursor, m.ColumnCursor, width)
 	s.WriteStrings(schema, "\n")
 
-	query := render.QueryPanel(m.FocusPanel == constant.FocusEditor, m.OutputFormat, m.SqlInput.View(), m.Configs[m.ConfigCursor].ReadWrite, m.TxPending, m.Configs[m.ConfigCursor].Name)
+	query := render.QueryPanel(m.FocusPanel == constant.FocusEditor, m.OutputFormat, m.SqlInput.View(), m.Configs[m.ConfigCursor].ReadWrite, m.TxPending, m.Configs[m.ConfigCursor].Name, width)
 
 	s.WriteStrings(query, "\n")
 	s.WriteStrings(lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Render(" [Ctrl+H] Help | [Tab] Switch Panel | [Ctrl+E] Run Query | [ESC] Back"), "\n")
