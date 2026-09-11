@@ -26,7 +26,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Width = msg.Width
 		m.Height = msg.Height
 		m.SqlInput.SetWidth(m.ContentWidth() - 2)
-		return m, tea.ClearScreen
+		var cmds []tea.Cmd
+		cmds = append(cmds, tea.Println("\033[3J"))
+		cmds = append(cmds, tea.ClearScreen)
+		return m, tea.Sequence(cmds...)
 	case tea.KeyMsg:
 
 		if msg.String() == "ctrl+c" {
@@ -203,7 +206,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if msg.String() == "ctrl+l" {
-			return m, tea.ClearScreen
+			var cmds []tea.Cmd
+			cmds = append(cmds, tea.Println("\033[3J"))
+			cmds = append(cmds, tea.ClearScreen)
+			return m, tea.Sequence(cmds...)
 		}
 
 		if msg.String() == "ctrl+h" {
