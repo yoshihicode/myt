@@ -203,28 +203,38 @@ func PasswordPrompt(target string, inputView string, errorMsg string, conName st
 
 }
 
-func HeaderBar(connName string, dbName string, rw bool) string {
+func HeaderBar(connName string, dbName string, rw bool, width int) string {
 
 	info := lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(connName + ": " + dbName)
 
-	if lipgloss.Width(info) < 80 {
-		pd := lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(strings.Repeat(" ", (80-lipgloss.Width(info))/2))
+	if lipgloss.Width(info) < width {
+		pd := lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(strings.Repeat(" ", (width-lipgloss.Width(info))/2))
 		info = pd + info + pd
-		if lipgloss.Width(info) == 79 {
-			info += lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(" ")
+		if lipgloss.Width(info) < width {
+			info += lipgloss.NewStyle().Background(lipgloss.Color(highlightColor)).Render(strings.Repeat(" ", width-lipgloss.Width(info)))
 		}
 	}
-	header := truncateText(info, 80)
+	header := truncateText(info, width)
 
 	return lipgloss.NewStyle().
 		Bold(true).
 		Render(header)
 }
 
-func SchemaPanels(focusPanel constant.Focus, databases []string, tables []string, columns []string, dbCursor int, tblCursor int, colCursor int) string {
+func SchemaPanels(focusPanel constant.Focus, databases []string, tables []string, columns []string, dbCursor int, tblCursor int, colCursor int, width int) string {
 
-	middlePane := schemaPanel(tblCursor, tables, "Tables", 38, focusPanel == constant.FocusTable)
-	rightPane := schemaPanel(colCursor, columns, "Columns", 38, focusPanel == constant.FocusColumn)
+	paneWidth := (width - 4) / 2
+	if paneWidth < 10 {
+		paneWidth = 10
+	}
+
+	adjust := 0
+	if width%2 != 0 {
+		adjust = 1
+	}
+
+	middlePane := schemaPanel(tblCursor, tables, "Tables", paneWidth, focusPanel == constant.FocusTable)
+	rightPane := schemaPanel(colCursor, columns, "Columns", paneWidth+adjust, focusPanel == constant.FocusColumn)
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, middlePane, rightPane)
 }
@@ -301,7 +311,7 @@ func truncateText(name string, maxWidth int) string {
 	return result
 }
 
-func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPending bool, connName string) string {
+func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPending bool, connName string, width int) string {
 	sqlBorderColor := inactiveColor
 	if isFocused {
 		sqlBorderColor = highlightColor
@@ -342,22 +352,28 @@ func QueryPanel(isFocused bool, format OutputFormat, text string, rw bool, txPen
 		statusBar = lipgloss.JoinVertical(lipgloss.Left, metaInfo)
 	}
 
+	innerWidth := width - 2
+	title := "SQL Editor"
+	if innerWidth < len(title)+4 {
+		innerWidth = len(title) + 4
+	}
+
 	var sb MyStringBuilder
 	borderStyle := lipgloss.NewStyle().Foreground(sqlBorderColor)
-	sb.WriteStrings(borderStyle.Render("┌─ SQL Editor ─"+strings.Repeat("─", 64)+"┐"), "\n")
+	sb.WriteStrings(borderStyle.Render("┌─ "+title+" ─"+strings.Repeat("─", innerWidth-4-len(title))+"┐"), "\n")
 
 	sqlContent := lipgloss.JoinVertical(lipgloss.Left, text, "", statusBar)
 	lines := strings.Split(sqlContent, "\n")
 
 	for _, line := range lines {
 		w := lipgloss.Width(line)
-		if w < 70 {
-			line += strings.Repeat(" ", 70-w)
+		if w < innerWidth {
+			line += strings.Repeat(" ", innerWidth-w)
 		}
 		sb.WriteStrings(borderStyle.Render("│")+line+borderStyle.Render("│"), "\n")
 	}
 
-	sb.WriteString(borderStyle.Render("└" + strings.Repeat("─", 78) + "┘"))
+	sb.WriteString(borderStyle.Render("└" + strings.Repeat("─", innerWidth) + "┘"))
 
 	return sb.String()
 }
